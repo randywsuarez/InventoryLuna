@@ -44,6 +44,6 @@ export default {
 	token: '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',
 	github: {
 		user: 'randywsuarez',
-		repository: 'windowsTest',
+		repository: 'InventoryLuna',
 	},
 }
