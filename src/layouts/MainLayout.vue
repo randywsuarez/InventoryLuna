@@ -1,90 +1,91 @@
 <template>
 	<q-layout view="lHh Lpr lFf" class="main-layout">
 		<q-header class="main-header">
-      <q-bar style="min-width: 250px;" class="bg-teal text-white rounded-borders">
-        <div class="cursor-pointer non-selectable">
-          File
-          <q-menu>
-            <q-list dense style="min-width: 100%">
-              <q-item clickable v-close-popup>
-                <q-item-section>Open...</q-item-section>
-              </q-item>
-              <q-item clickable v-close-popup>
-                <q-item-section>New</q-item-section>
-              </q-item>
-              <q-separator />
-              <q-item clickable>
-                <q-item-section>Preferences</q-item-section>
-                <q-item-section side>
-                  <q-icon name="keyboard_arrow_right" />
-                </q-item-section>
+			<q-bar
+				style="min-width: 250px"
+				class="bg-teal text-white rounded-borders"
+				@mousedown="startDrag"
+			>
+				<div class="cursor-pointer non-selectable">
+					File
+					<q-menu>
+						<q-list dense style="min-width: 100%">
+							<q-item clickable v-close-popup>
+								<q-item-section>Open...</q-item-section>
+							</q-item>
+							<q-item clickable v-close-popup>
+								<q-item-section>New</q-item-section>
+							</q-item>
+							<q-separator />
+							<q-item clickable>
+								<q-item-section>Preferences</q-item-section>
+								<q-item-section side>
+									<q-icon name="keyboard_arrow_right" />
+								</q-item-section>
 
-                <q-menu anchor="top end" self="top start">
-                  <q-list dense>
-                    <q-item
-                      v-for="n in 3"
-                      :key="n"
-                      clickable
-                    >
-                      <q-item-section>Submenu Label</q-item-section>
-                      <q-item-section side>
-                        <q-icon name="keyboard_arrow_right" />
-                      </q-item-section>
-                      <q-menu auto-close anchor="top end" self="top start">
-                        <q-list dense>
-                          <q-item
-                            v-for="n in 3"
-                            :key="n"
-                            clickable
-                          >
-                            <q-item-section>3rd level Label</q-item-section>
-                          </q-item>
-                        </q-list>
-                      </q-menu>
-                    </q-item>
-                  </q-list>
-                </q-menu>
-
-              </q-item>
-              <q-separator />
-              <q-item clickable v-close-popup>
-                <q-item-section>Quit</q-item-section>
-              </q-item>
-            </q-list>
-          </q-menu>
-        </div>
-        <div class="cursor-pointer non-selectable">Edit
-          <q-menu>
-            <q-list dense style="min-width: 100px">
-              <q-item clickable v-close-popup>
-                <q-item-section>Cut</q-item-section>
-              </q-item>
-              <q-item clickable v-close-popup>
-                <q-item-section>Copy</q-item-section>
-              </q-item>
-              <q-item clickable v-close-popup>
-                <q-item-section>Paste</q-item-section>
-              </q-item>
-              <q-separator />
-              <q-item clickable v-close-popup>
-                <q-item-section>Select All</q-item-section>
-              </q-item>
-            </q-list>
-          </q-menu>
-        </div>
-        <q-space />
-        <q-btn dense flat icon="minimize" />
-        <q-btn dense flat icon="crop_square" />
-        <q-btn dense flat icon="close" />
-      </q-bar>
+								<q-menu anchor="top end" self="top start">
+									<q-list dense>
+										<q-item v-for="n in 3" :key="n" clickable>
+											<q-item-section>Submenu Label</q-item-section>
+											<q-item-section side>
+												<q-icon name="keyboard_arrow_right" />
+											</q-item-section>
+											<q-menu auto-close anchor="top end" self="top start">
+												<q-list dense>
+													<q-item v-for="n in 3" :key="n" clickable>
+														<q-item-section>3rd level Label</q-item-section>
+													</q-item>
+												</q-list>
+											</q-menu>
+										</q-item>
+									</q-list>
+								</q-menu>
+							</q-item>
+							<q-separator />
+							<q-item clickable v-close-popup>
+								<q-item-section>Quit</q-item-section>
+							</q-item>
+						</q-list>
+					</q-menu>
+				</div>
+				<div class="cursor-pointer non-selectable">
+					catalog
+					<q-menu>
+						<q-list dense style="min-width: 100px">
+							<q-item clickable v-close-popup>
+								<q-item-section>Pallet Types</q-item-section>
+							</q-item>
+							<q-item clickable v-close-popup>
+								<q-item-section>Product Types</q-item-section>
+							</q-item>
+							<q-item clickable v-close-popup>
+								<q-item-section>Other Products</q-item-section>
+							</q-item>
+							<q-separator />
+							<q-item clickable v-close-popup>
+								<q-item-section>Setting</q-item-section>
+							</q-item>
+						</q-list>
+					</q-menu>
+				</div>
+				<q-space />
+				<q-btn dense flat icon="minimize" @click="minimizeWindow()" />
+				<q-btn
+					dense
+					flat
+					:icon="isMaximized ? 'fullscreen_exit' : 'crop_square'"
+					@click="maximizeWindow"
+				/>
+				<q-btn dense flat icon="close" @click="closeWindow()" />
+			</q-bar>
 			<!-- <q-toolbar>
 				<q-btn flat dense round icon="logout" @click="cerrarSesion" />
 
 				<q-toolbar-title>Inventory - ISPT Services V{{ version }}</q-toolbar-title>
 				<div class="close-button" @click="cerrarVentana">
 					<q-icon name="close" size="24px" color="white" />
-				</div> -->
-			</q-toolbar>
+				</div>
+			</q-toolbar> -->
 		</q-header>
 
 		<q-dialog v-model="isDialogVisible" class="login-card" persistent>
@@ -141,37 +142,12 @@
 		</q-page-container>
 	</q-layout>
 </template>
-
-<style scoped>
-	.main-layout {
-		background: linear-gradient(45deg, #ffffff, #87cefa); /* Degradado entre blanco y azul pastel */
-		transition: background 0.5s ease-in-out; /* Animación de cambio de fondo */
-	}
-
-	.main-header {
-		background: rgba(255, 255, 255, 0.1); /* Fondo translúcido para el efecto de vidrio */
-		backdrop-filter: blur(10px);
-		transition: background 0.5s ease-in-out; /* Animación de cambio de fondo */
-		border-bottom: 1px solid rgba(255, 255, 255, 0.2); /* Borde en la parte inferior */
-	}
-
-	.close-button {
-		cursor: pointer;
-		margin-left: auto;
-		padding: 10px;
-		transition: transform 0.3s ease-in-out; /* Animación de escala */
-	}
-
-	.close-button:hover {
-		transform: scale(1.2); /* Efecto de escala al pasar el mouse */
-	}
-</style>
-
 <script>
 	import EssentialLink from 'components/EssentialLink.vue'
 	import winDate from '../scripts/updateDate'
 	import UpdateService from '../utils/updateService'
 	import env from '../utils/env'
+	const electron = require('electron')
 
 	const linksData = [
 		{
@@ -200,6 +176,7 @@
 				v: {},
 				version: '',
 				updateService: '',
+				isMaximized: false,
 			}
 		},
 		async created() {
@@ -216,8 +193,68 @@
 				this.comprobarToken(credencialesGuardadas)
 			}
 		},
-
 		methods: {
+			closeWindow() {
+				remote.getCurrentWindow().close()
+			},
+			quitApplication() {
+				const { app } = remote
+				app.quit()
+			},
+			minimizeWindow() {
+				electron.remote.getCurrentWindow().minimize()
+			},
+			maximizeWindow() {
+				const currentWindow = electron.remote.getCurrentWindow()
+
+				if (currentWindow.isMaximized()) {
+					currentWindow.unmaximize()
+					this.isMaximized = false
+				} else {
+					currentWindow.maximize()
+					this.isMaximized = true
+				}
+			},
+			startDrag(event) {
+				if (event.button === 0) {
+					this.dragging = true
+					this.offsetX = event.clientX
+					this.offsetY = event.clientY
+
+					window.addEventListener('mousemove', this.dragWindow)
+					window.addEventListener('mouseup', this.stopDrag)
+				}
+			},
+			startDrag(event) {
+				if (event.button === 0) {
+					this.dragging = true
+					this.offsetX = event.screenX
+					this.offsetY = event.screenY
+
+					window.addEventListener('mousemove', this.dragWindow)
+					window.addEventListener('mouseup', this.stopDrag)
+				}
+			},
+			dragWindow(event) {
+				if (this.dragging) {
+					const currentWindow = electron.remote.getCurrentWindow()
+
+					const newX = event.screenX - this.offsetX
+					const newY = event.screenY - this.offsetY
+
+					const [currentX, currentY] = currentWindow.getPosition()
+
+					currentWindow.setPosition(currentX + newX, currentY + newY)
+
+					this.offsetX = event.screenX
+					this.offsetY = event.screenY
+				}
+			},
+			stopDrag() {
+				this.dragging = false
+				window.removeEventListener('mousemove', this.dragWindow)
+				window.removeEventListener('mouseup', this.stopDrag)
+			},
 			checkInternetConnection() {
 				this.hasInternet = navigator.onLine
 
@@ -322,7 +359,7 @@
 				env.token
 			)
 
-			const actualizacionDisponible = await this.updateService.verificarActualizacion()
+			/* const actualizacionDisponible = await this.updateService.verificarActualizacion()
 
 			if (actualizacionDisponible.result) {
 				clearInterval(this.intervalId)
@@ -330,8 +367,32 @@
 				this.v['new'] = actualizacionDisponible.version
 				this.v['body'] = actualizacionDisponible.body
 				this.updt = actualizacionDisponible.result
-			}
+			} */
 		},
 		beforeDestroy() {},
 	}
 </script>
+<style scoped>
+	.main-layout {
+		background: linear-gradient(45deg, #ffffff, #87cefa); /* Degradado entre blanco y azul pastel */
+		transition: background 0.5s ease-in-out; /* Animación de cambio de fondo */
+	}
+
+	.main-header {
+		background: rgba(255, 255, 255, 0.1); /* Fondo translúcido para el efecto de vidrio */
+		backdrop-filter: blur(10px);
+		transition: background 0.5s ease-in-out; /* Animación de cambio de fondo */
+		border-bottom: 1px solid rgba(255, 255, 255, 0.2); /* Borde en la parte inferior */
+	}
+
+	.close-button {
+		cursor: pointer;
+		margin-left: auto;
+		padding: 10px;
+		transition: transform 0.3s ease-in-out; /* Animación de escala */
+	}
+
+	.close-button:hover {
+		transform: scale(1.2); /* Efecto de escala al pasar el mouse */
+	}
+</style>
