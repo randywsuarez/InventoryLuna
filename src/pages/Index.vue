@@ -5,19 +5,13 @@
 				<q-card class="card" style="height: 90vh">
 					<div class="row col">
 						<div class="row col-12">
-							<q-input
-								class="col-3"
-								standout="bg-teal text-white"
-								v-model="form.OldPallet"
-								label="Old Pallet"
-								focus
-							/>
 							<q-select
 								class="col-3"
 								standout="bg-teal text-white"
 								v-model="form.PalletTypeID"
 								:options="options"
 								label="Pallet Type"
+								focus
 							/>
 							<q-select
 								class="col-3"
@@ -33,8 +27,16 @@
 								:options="options"
 								label="Other Product"
 							/>
+							<q-btn size="22px" color="green" class="col-3" label="CREATE PALLET" />
 						</div>
+						<q-separator spaced inset />
 						<div class="row col-12">
+							<q-input
+								class="col-3"
+								standout="bg-teal text-white"
+								v-model="form.OldPallet"
+								label="Old Pallet"
+							/>
 							<q-toggle class="col-3" size="xl" v-model="cases" :val="true" label="Case" />
 							<q-input
 								class="col-3"
@@ -104,6 +106,7 @@
 						<q-list bordered separator>
 							<q-item clickable v-ripple>
 								<q-item-section>DAL-ACA000001</q-item-section>
+								<q-item-section side>Closed</q-item-section>
 								<q-menu touch-position context-menu>
 									<q-list dense style="min-width: 100px">
 										<q-item clickable v-close-popup>
@@ -117,6 +120,12 @@
 												<q-icon color="primary" name="fa-solid fa-file-excel" />
 											</q-item-section>
 											<q-item-section>Report Sales</q-item-section>
+										</q-item>
+										<q-item clickable v-close-popup>
+											<q-item-section avatar>
+												<q-icon color="primary" name="fa-solid fa-envelope" />
+											</q-item-section>
+											<q-item-section>Send by Email</q-item-section>
 										</q-item>
 									</q-list>
 								</q-menu>

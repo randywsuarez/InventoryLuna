@@ -10,7 +10,7 @@
 					File
 					<q-menu>
 						<q-list dense style="min-width: 100%">
-							<q-item clickable v-close-popup>
+							<q-item clickable v-close-popup to="/">
 								<q-item-section>Open...</q-item-section>
 							</q-item>
 							<q-item clickable v-close-popup>
@@ -52,7 +52,7 @@
 					catalog
 					<q-menu>
 						<q-list dense style="min-width: 100px">
-							<q-item clickable v-close-popup>
+							<q-item clickable v-close-popup to="/typePallet">
 								<q-item-section>Pallet Types</q-item-section>
 							</q-item>
 							<q-item clickable v-close-popup>
