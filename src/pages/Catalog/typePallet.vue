@@ -48,7 +48,7 @@
 							v-model="form.Description"
 							label="Description"
 						/>
-						<q-checkbox v-model="form.Status" label="Active" />
+						<q-checkbox v-model="form.Status" label="Active" true-value="1" false-value="0" />
 					</div>
 				</q-card-section>
 
@@ -64,13 +64,15 @@
 </template>
 
 <script>
+	import env from '../../utils/env'
 	export default {
 		data() {
 			return {
 				Title: 'Pallet Types',
 				table: 'conf_PalletTypes',
+				id: 'PalletTypesID',
 				form: {
-					Status: false,
+					Status: 0,
 				},
 				columns: [
 					{ name: 'Code', label: 'Code', field: 'Code', sortable: true },
@@ -89,12 +91,18 @@
 		methods: {
 			newType() {
 				this.form = {
-					Status: false,
+					Status: 0,
 				}
 				this.newr = true
 				this.dialog = true
 			},
-			save() {
+			async save() {
+				this.form[this.id] = 'NEWID()'
+				let result = await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
+					.insert(this.table)
+					.fields(this.form)
+					.execute()
+				console.log(result)
 				this.dialog = false
 			},
 		},

@@ -182,6 +182,11 @@
 					console.error('Error al enviar el correo:', error.message)
 				}
 			},
+			formatID(number) {
+				const lengthOfID = 6 // La longitud total del ID, ajusta según tus necesidades
+				const formattedID = number.toString().padStart(lengthOfID, '0')
+				return formattedID
+			},
 		},
 		async beforeCreate() {},
 		async mounted() {

@@ -6,8 +6,8 @@ export default {
 	},
 	DB_INVENTORY: {
 		server: 'sqlprodisp.database.windows.net',
-		user: 'sfis_test',
-		password: 'Sf1s@R3ad_1st#2023prod',
+		user: 'sfis_inventory',
+		password: 'sf1s_1nv3ntory#',
 	},
 	localDB: {
 		server: '192.168.0.6',

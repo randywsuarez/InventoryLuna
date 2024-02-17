@@ -120,7 +120,6 @@ FETCH NEXT ${limit} ROWS ONLY`
 
 		async executeQuery(query) {
 			try {
-				//console.log(this.config)
 				const pool = await new sql.ConnectionPool(this.config).connect()
 				const request = pool.request()
 
@@ -175,6 +174,7 @@ FETCH NEXT ${limit} ROWS ONLY`
 				.join(', ')
 
 			this.query += ` (${fields}) VALUES (${values})`
+			console.log(this.query)
 
 			return this
 		}
@@ -205,6 +205,7 @@ FETCH NEXT ${limit} ROWS ONLY`
 		}
 
 		async execute() {
+			console.log(this.query)
 			sessionStorage.setItem('result', this.query)
 			//console.log()
 			return this.executeQuery(this.query)
@@ -212,6 +213,6 @@ FETCH NEXT ${limit} ROWS ONLY`
 	}
 
 	// Agregar el objeto RsDB al prototipo de Vue
-	Vue.prototype.$rsDB = (databaseName) => new RsDB(databaseName)
+	Vue.prototype.$rsDB = (databaseName, db) => new RsDB(databaseName, db)
 	Vue.prototype.$localDB = () => new localDB()
 }
