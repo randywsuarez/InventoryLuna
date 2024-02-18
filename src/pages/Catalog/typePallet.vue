@@ -100,7 +100,14 @@
 						sortable: true,
 						align: 'left',
 					},
-					{ name: 'Status', label: 'Status', field: 'Status', sortable: true, align: 'left' },
+					{
+						name: 'Status',
+						label: 'Status',
+						field: 'Status',
+						sortable: true,
+						align: 'left',
+						format: (val) => `${val ? 'Enabled' : 'Disabled'}`,
+					},
 				],
 				//vcolumns: ['Code', 'Description', 'Status'],
 				data: [],
@@ -146,6 +153,7 @@
 					.select('*')
 					.from(this.table)
 					.execute()
+				console.log(res)
 				this.data = res
 				this.loading = false
 			},
