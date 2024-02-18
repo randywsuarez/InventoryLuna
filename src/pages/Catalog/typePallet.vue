@@ -27,6 +27,23 @@
 								</template>
 							</q-input>
 						</template>
+						<template v-slot:body="props">
+							<q-tr :props="props" @dblclick="openEditDialog(props.row)">
+								<q-td v-for="col in props.cols" :key="col.name" :props="props">
+									{{ props.row[col.name] }}
+								</q-td>
+							</q-tr>
+						</template>
+
+						<!-- Menú contextual para editar -->
+
+						<q-menu ref="editMenu" context-menu>
+							<q-list>
+								<q-item clickable @click="openEditDialog(contextMenu.row)">
+									<q-item-section>Edit</q-item-section>
+								</q-item>
+							</q-list>
+						</q-menu>
 					</q-table>
 				</q-card>
 			</div>
@@ -48,7 +65,7 @@
 							v-model="form.Description"
 							label="Description"
 						/>
-						<q-checkbox v-model="form.Status" label="Active" true-value="1" false-value="0" />
+						<q-checkbox v-model="form.Status" label="Active" :true-value="1" :false-value="0" />
 					</div>
 				</q-card-section>
 
@@ -75,9 +92,15 @@
 					Status: 0,
 				},
 				columns: [
-					{ name: 'Code', label: 'Code', field: 'Code', sortable: true },
-					{ name: 'Description', label: 'Description', field: 'Description', sortable: true },
-					{ name: 'Status', label: 'Status', field: 'Status', sortable: true },
+					{ name: 'Code', label: 'Code', field: 'Code', sortable: true, align: 'left' },
+					{
+						name: 'Description',
+						label: 'Description',
+						field: 'Description',
+						sortable: true,
+						align: 'left',
+					},
+					{ name: 'Status', label: 'Status', field: 'Status', sortable: true, align: 'left' },
 				],
 				//vcolumns: ['Code', 'Description', 'Status'],
 				data: [],
@@ -89,6 +112,9 @@
 			}
 		},
 		methods: {
+			convertCheckboxValue(value) {
+				return value ? 1 : 0
+			},
 			newType() {
 				this.form = {
 					Status: 0,
@@ -97,17 +123,49 @@
 				this.dialog = true
 			},
 			async save() {
-				this.form[this.id] = 'NEWID()'
-				let result = await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
-					.insert(this.table)
-					.fields(this.form)
-					.execute()
-				console.log(result)
+				if (!this.form.hasOwnProperty(`${this.id}`)) {
+					this.form[this.id] = 'NEWID()'
+					let result = await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
+						.insert(this.table)
+						.fields(this.form)
+						.execute()
+					console.log(result)
+				} else {
+					await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
+						.update(this.table)
+						.set(this.form)
+						.where(`${this.id}='${this.form[this.id]}'`)
+						.execute()
+				}
+				this.infoGet()
 				this.dialog = false
+			},
+			async infoGet() {
+				this.loading = true
+				let res = await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
+					.select('*')
+					.from(this.table)
+					.execute()
+				this.data = res
+				this.loading = false
+			},
+
+			openEditDialog(row) {
+				console.log(row)
+				this.form = { ...row } // Copiar los valores del row a this.form
+				this.form.Status = this.form.Status ? 1 : 0
+				this.newr = false // Cambiar this.newr a falso para indicar que no es un nuevo registro
+				this.dialog = true // Abrir el diálogo
+			},
+			// Función para editar el row desde el menú contextual
+			editRow(row) {
+				this.openEditDialog(row)
 			},
 		},
 		async beforeCreate() {},
-		async mounted() {},
+		async mounted() {
+			await this.infoGet()
+		},
 	}
 </script>
 <style scoped>

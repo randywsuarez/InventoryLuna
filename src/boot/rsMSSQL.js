@@ -42,6 +42,7 @@ export default async ({ Vue }) => {
 		}
 
 		where(conditions) {
+			console.log(conditions)
 			this.query += ` WHERE ${conditions}`
 			return this
 		}
@@ -103,7 +104,7 @@ FETCH NEXT ${limit} ROWS ONLY`
 
 		async execute() {
 			sessionStorage.setItem('result', this.query)
-			//console.log()
+			console.log(this.query)
 			return this.executeQuery(this.query)
 		}
 	}
