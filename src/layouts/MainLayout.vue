@@ -52,10 +52,10 @@
 					catalog
 					<q-menu>
 						<q-list dense style="min-width: 100px">
-							<q-item clickable v-close-popup to="/typePallet">
+							<q-item clickable v-close-popup to="/palletTypes">
 								<q-item-section>Pallet Types</q-item-section>
 							</q-item>
-							<q-item clickable v-close-popup>
+							<q-item clickable v-close-popup to="/productTypes">
 								<q-item-section>Product Types</q-item-section>
 							</q-item>
 							<q-item clickable v-close-popup>

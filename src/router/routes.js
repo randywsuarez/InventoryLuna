@@ -5,9 +5,14 @@ const routes = [
 		children: [{ path: '', component: () => import('pages/Index.vue') }],
 	},
 	{
-		path: '/typePallet',
+		path: '/palletTypes',
 		component: () => import('layouts/MainLayout.vue'),
-		children: [{ path: '/', component: () => import('pages/Catalog/typePallet.vue') }],
+		children: [{ path: '/', component: () => import('src/pages/Catalog/palletTypes.vue') }],
+	},
+	{
+		path: '/productTypes',
+		component: () => import('layouts/MainLayout.vue'),
+		children: [{ path: '/', component: () => import('src/pages/Catalog/productTypes.vue') }],
 	},
 	{
 		path: '/login',
