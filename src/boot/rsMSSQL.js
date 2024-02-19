@@ -68,7 +68,11 @@ FETCH NEXT ${limit} ROWS ONLY`
 			const fields = Object.keys(fieldsObj).join(', ')
 			const values = Object.values(fieldsObj)
 				.map((value) =>
-					value === 'NEWID()' ? 'NEWID()' : typeof value === 'string' ? `'${value}'` : value
+					value === 'NEWID()' || value === 'GETDATE()'
+						? value
+						: typeof value === 'string'
+						? `'${value}'`
+						: value
 				)
 				.join(', ')
 
@@ -170,7 +174,11 @@ FETCH NEXT ${limit} ROWS ONLY`
 			const fields = Object.keys(fieldsObj).join(', ')
 			const values = Object.values(fieldsObj)
 				.map((value) =>
-					value === 'NEWID()' ? 'NEWID()' : typeof value === 'string' ? `'${value}'` : value
+					value === 'NEWID()' || value === 'GETDATE()'
+						? value
+						: typeof value === 'string'
+						? `'${value}'`
+						: value
 				)
 				.join(', ')
 

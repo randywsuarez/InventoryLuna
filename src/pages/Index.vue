@@ -7,27 +7,41 @@
 						<div class="row col-12">
 							<q-select
 								class="col-3"
-								standout="bg-teal text-white"
-								v-model="form.PalletTypeID"
-								:options="options"
-								label="Pallet Type"
 								focus
+								standout="bg-teal text-white"
+								v-model="pid.PalletTypeID"
+								:options="PalletTypes"
+								label="Pallet Type"
+								emit-value
+								map-options
 							/>
 							<q-select
 								class="col-3"
 								standout="bg-teal text-white"
-								v-model="form.ProductTypesID"
-								:options="options"
+								v-model="pid.ProductTypesID"
+								:options="ProductTypes"
 								label="Product Types"
+								@change="filterOther"
+								emit-value
+								map-options
 							/>
 							<q-select
 								class="col-3"
 								standout="bg-teal text-white"
-								v-model="form.OtherProductsID"
-								:options="options"
+								v-model="pid.OtherProductsID"
+								:options="OtherProducts"
 								label="Other Product"
+								:disable="!pid.ProductTypesID"
+								emit-value
+								map-options
 							/>
-							<q-btn size="22px" color="green" class="col-3" label="CREATE PALLET" />
+							<q-btn
+								size="22px"
+								color="green"
+								class="col-3"
+								label="CREATE PALLET"
+								@click="createPallet()"
+							/>
 						</div>
 						<q-separator spaced inset />
 						<div class="row col-12">
@@ -71,8 +85,6 @@
 							:data="palletData"
 							:columns="columns"
 							row-key="index"
-							virtual-scroll
-							:pagination.sync="pagination"
 							:rows-per-page-options="[0]"
 						/>
 					</div>
@@ -103,10 +115,10 @@
 					</q-card-section>
 					<q-separator />
 					<q-card-section>
-						<q-list bordered separator>
+						<q-list bordered separator v-for="(pallet, key) in pallets" :key="key">
 							<q-item clickable v-ripple>
-								<q-item-section>DAL-ACA000001</q-item-section>
-								<q-item-section side>Closed</q-item-section>
+								<q-item-section>{{ pallet.Name }}</q-item-section>
+								<q-item-section side>{{ pallet.Status == 1 ? 'Open' : 'Closed' }}</q-item-section>
 								<q-menu touch-position context-menu>
 									<q-list dense style="min-width: 100px">
 										<q-item clickable v-close-popup>
@@ -139,9 +151,19 @@
 </template>
 
 <script>
+	import env from '../utils/env'
+	import moment from 'moment'
 	export default {
 		data(r) {
 			return {
+				PalletTypes: [],
+				ProductTypes: [],
+				OtherProducts: [],
+				pallets: [],
+				setting: [],
+				pid: {
+					PalletID: '',
+				},
 				form: {
 					Qty: 1,
 				},
@@ -167,6 +189,31 @@
 			}
 		},
 		methods: {
+			filterOther() {
+				this.OtherProducts = this.OtherProducts.filter((v) => v.parent == this.pid.ProductTypesID)
+			},
+			async createPallet() {
+				if (!this.pid.hasOwnProperty('PalletID')) {
+					this.pid['PalletID'] = 'NEWID()'
+					this.pid['Date'] = 'GETDATE()'
+					this.pid['Operator'] = 'test'
+					this.pid['Status'] = 1
+					this.pid['Name'] = `${this.setting.PalletPrefix}-${
+						this.PalletTypes.find((v) => v.value == this.pid.PalletTypeID).Code
+					}${await this.formatID(this.setting.PalletNumber)}`
+					console.log(this.pid.Name)
+					this.pid = await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
+						.insert('LN_InternalPallet')
+						.fields(this.pid)
+						.execute()
+					this.setting.PalletNumber++
+					await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
+						.update('conf_Setting')
+						.set(this.setting)
+						.where(`SettingID='${this.setting.SettingID}'`)
+						.execute()
+				}
+			},
 			async enviarCorreo() {
 				try {
 					await this.$sendEmail({
@@ -182,7 +229,7 @@
 					console.error('Error al enviar el correo:', error.message)
 				}
 			},
-			formatID(number) {
+			async formatID(number) {
 				const lengthOfID = 6 // La longitud total del ID, ajusta según tus necesidades
 				const formattedID = number.toString().padStart(lengthOfID, '0')
 				return formattedID
@@ -194,6 +241,50 @@
 			const remote = electron.remote
 			const ventanaActual = remote.getCurrentWindow()
 			ventanaActual.maximize()
+			this.$q.loading.show()
+			let pt = await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
+				.select('*')
+				.from('conf_PalletTypes')
+				.execute()
+			for (let x of pt) {
+				this.PalletTypes.push({
+					label: x.Description,
+					value: x.PalletTypesID,
+					Code: x.Code,
+				})
+			}
+			let prt = await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
+				.select('*')
+				.from('conf_ProductTypes')
+				.execute()
+			for (let x of prt) {
+				this.ProductTypes.push({
+					label: x.Description,
+					value: x.ProductTypesID,
+				})
+			}
+			let op = await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
+				.select('*')
+				.from('conf_OtherProducts')
+				.execute()
+			for (let x of op) {
+				this.OtherProducts.push({
+					label: x.Description,
+					value: x.OtherProductsID,
+					parent: x.ProductTypesID,
+				})
+			}
+			this.setting = (
+				await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY).select('*').from('conf_Setting').execute()
+			)[0]
+			console.log(this.setting)
+			this.pallets = await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
+				.select('*')
+				.from('LN_InternalPallet')
+				.execute()
+			console.log(this.setting)
+
+			this.$q.loading.hide()
 		},
 	}
 </script>
