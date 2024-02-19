@@ -10,6 +10,11 @@ const routes = [
 		children: [{ path: '/', component: () => import('src/pages/Catalog/palletTypes.vue') }],
 	},
 	{
+		path: '/OtherProducts',
+		component: () => import('layouts/MainLayout.vue'),
+		children: [{ path: '/', component: () => import('src/pages/Catalog/otherProducts.vue') }],
+	},
+	{
 		path: '/productTypes',
 		component: () => import('layouts/MainLayout.vue'),
 		children: [{ path: '/', component: () => import('src/pages/Catalog/productTypes.vue') }],

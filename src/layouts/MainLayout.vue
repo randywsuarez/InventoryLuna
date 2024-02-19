@@ -58,7 +58,7 @@
 							<q-item clickable v-close-popup to="/productTypes">
 								<q-item-section>Product Types</q-item-section>
 							</q-item>
-							<q-item clickable v-close-popup>
+							<q-item clickable v-close-popup to="/OtherProducts">
 								<q-item-section>Other Products</q-item-section>
 							</q-item>
 							<q-separator />
