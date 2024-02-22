@@ -116,7 +116,7 @@
 					<q-separator />
 					<q-card-section>
 						<q-list bordered separator v-for="(pallet, key) in pallets" :key="key">
-							<q-item clickable v-ripple>
+							<q-item clickable v-ripple @click="actionPallet(pallet.PalletID)">
 								<q-item-section>{{ pallet.Name }}</q-item-section>
 								<q-item-section side>{{ pallet.Status == 1 ? 'Open' : 'Closed' }}</q-item-section>
 								<q-menu touch-position context-menu>
@@ -233,6 +233,47 @@
 				const lengthOfID = 6 // La longitud total del ID, ajusta según tus necesidades
 				const formattedID = number.toString().padStart(lengthOfID, '0')
 				return formattedID
+			},
+			async actionPallet(id) {
+				let pallet = this.pallets.find((v) => v.PalletID == id)
+				if (pallet.Status == 0) {
+					this.$q
+						.dialog({
+							title: 'Confirm',
+							message: `Do you want to open the palette again: ${pallet.Name}?`,
+							cancel: true,
+							persistent: true,
+						})
+						.onOk(async () => {
+							this.$q.loading.show()
+							pallet.Status = 1
+							await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
+								.update('LN_InternalPallet')
+								.set({ Status: 1 })
+								.where(`PalletID='${pallet.PalletID}'`)
+								.execute()
+							this.pid = pallet
+							this.$q.loading.hide()
+						})
+						.onOk(() => {
+							// console.log('>>>> second OK catcher')
+						})
+						.onCancel(() => {
+							// console.log('>>>> Cancel')
+						})
+						.onDismiss(() => {
+							// console.log('I am triggered on both OK and Cancel')
+						})
+				}
+			},
+			closePallet() {
+				if (this.palletData.length) {
+				} else {
+					this.$q.notify({
+						type: 'negative',
+						message: `This palette is empty.`,
+					})
+				}
 			},
 		},
 		async beforeCreate() {},
