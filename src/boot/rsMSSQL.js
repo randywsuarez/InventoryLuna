@@ -17,7 +17,6 @@ export default async ({ Vue }) => {
 
 		async executeQuery(query) {
 			try {
-				//console.log(this.config)
 				const pool = await new sql.ConnectionPool(this.config).connect()
 				const request = pool.request()
 
@@ -31,6 +30,11 @@ export default async ({ Vue }) => {
 			}
 		}
 
+		myQuery(query) {
+			this.query = query
+			return this
+		}
+
 		select(fields) {
 			this.query = `SELECT ${fields}`
 			return this
@@ -42,7 +46,6 @@ export default async ({ Vue }) => {
 		}
 
 		where(conditions) {
-			console.log(conditions)
 			this.query += ` WHERE ${conditions}`
 			return this
 		}
@@ -53,9 +56,7 @@ export default async ({ Vue }) => {
 		}
 
 		limit(limit) {
-			this.query += ` ORDER BY 1
-OFFSET 0 ROWS
-FETCH NEXT ${limit} ROWS ONLY`
+			this.query += ` ORDER BY 1 OFFSET 0 ROWS FETCH NEXT ${limit} ROWS ONLY`
 			return this
 		}
 
@@ -64,20 +65,26 @@ FETCH NEXT ${limit} ROWS ONLY`
 			return this
 		}
 
-		fields(fieldsObj) {
-			const fields = Object.keys(fieldsObj).join(', ')
-			const values = Object.values(fieldsObj)
-				.map((value) =>
-					value === 'NEWID()' || value === 'GETDATE()'
-						? value
-						: typeof value === 'string'
-						? `'${value}'`
-						: value
+		valuesArray(arrayOfFields) {
+			const fields = Object.keys(arrayOfFields[0]).join(', ')
+			const values = arrayOfFields
+				.map(
+					(fieldsObj) =>
+						'(' +
+						Object.values(fieldsObj)
+							.map((value) =>
+								value === 'NEWID()' || value === 'GETDATE()'
+									? value
+									: typeof value === 'string'
+									? `'${value}'`
+									: value
+							)
+							.join(', ') +
+						')'
 				)
 				.join(', ')
 
-			this.query += ` (${fields}) VALUES (${values})`
-
+			this.query += ` (${fields}) VALUES ${values}`
 			return this
 		}
 
@@ -86,13 +93,16 @@ FETCH NEXT ${limit} ROWS ONLY`
 			return this
 		}
 
-		set(fieldsObj) {
-			const sets = Object.entries(fieldsObj)
-				.map(([field, value]) => `${field} = ${typeof value === 'string' ? `'${value}'` : value}`)
+		setArray(arrayOfFields) {
+			const sets = arrayOfFields
+				.map((fieldsObj) =>
+					Object.entries(fieldsObj)
+						.map(([field, value]) => `${field} = ${typeof value === 'string' ? `'${value}'` : value}`)
+						.join(', ')
+				)
 				.join(', ')
 
 			this.query += ` SET ${sets}`
-
 			return this
 		}
 
@@ -112,6 +122,7 @@ FETCH NEXT ${limit} ROWS ONLY`
 			return this.executeQuery(this.query)
 		}
 	}
+
 	class localDB {
 		constructor() {
 			this.config = {
@@ -138,6 +149,11 @@ FETCH NEXT ${limit} ROWS ONLY`
 			}
 		}
 
+		myQuery(query) {
+			this.query = query
+			return this
+		}
+
 		select(fields) {
 			this.query = `SELECT ${fields}`
 			return this
@@ -159,9 +175,7 @@ FETCH NEXT ${limit} ROWS ONLY`
 		}
 
 		limit(limit) {
-			this.query += ` ORDER BY 1
-OFFSET 0 ROWS
-FETCH NEXT ${limit} ROWS ONLY`
+			this.query += ` ORDER BY 1 OFFSET 0 ROWS FETCH NEXT ${limit} ROWS ONLY`
 			return this
 		}
 
@@ -170,21 +184,27 @@ FETCH NEXT ${limit} ROWS ONLY`
 			return this
 		}
 
-		fields(fieldsObj) {
-			const fields = Object.keys(fieldsObj).join(', ')
-			const values = Object.values(fieldsObj)
-				.map((value) =>
-					value === 'NEWID()' || value === 'GETDATE()'
-						? value
-						: typeof value === 'string'
-						? `'${value}'`
-						: value
+		valuesArray(arrayOfFields) {
+			const fields = Object.keys(arrayOfFields[0]).join(', ')
+			const values = arrayOfFields
+				.map(
+					(fieldsObj) =>
+						'(' +
+						Object.values(fieldsObj)
+							.map((value) =>
+								value === 'NEWID()' || value === 'GETDATE()'
+									? value
+									: typeof value === 'string'
+									? `'${value}'`
+									: value
+							)
+							.join(', ') +
+						')'
 				)
 				.join(', ')
 
-			this.query += ` (${fields}) VALUES (${values})`
+			this.query += ` (${fields}) VALUES ${values}`
 			console.log(this.query)
-
 			return this
 		}
 
@@ -193,13 +213,16 @@ FETCH NEXT ${limit} ROWS ONLY`
 			return this
 		}
 
-		set(fieldsObj) {
-			const sets = Object.entries(fieldsObj)
-				.map(([field, value]) => `${field} = ${typeof value === 'string' ? `'${value}'` : value}`)
+		setArray(arrayOfFields) {
+			const sets = arrayOfFields
+				.map((fieldsObj) =>
+					Object.entries(fieldsObj)
+						.map(([field, value]) => `${field} = ${typeof value === 'string' ? `'${value}'` : value}`)
+						.join(', ')
+				)
 				.join(', ')
 
 			this.query += ` SET ${sets}`
-
 			return this
 		}
 
@@ -216,7 +239,6 @@ FETCH NEXT ${limit} ROWS ONLY`
 		async execute() {
 			console.log(this.query)
 			sessionStorage.setItem('result', this.query)
-			//console.log()
 			return this.executeQuery(this.query)
 		}
 	}
