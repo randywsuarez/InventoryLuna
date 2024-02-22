@@ -114,11 +114,14 @@
 						</q-input>
 					</q-card-section>
 					<q-separator />
-					<q-card-section>
+					<q-card-section scroll>
 						<q-list bordered separator v-for="(pallet, key) in pallets" :key="key">
 							<q-item clickable v-ripple @click="actionPallet(pallet.PalletID)">
 								<q-item-section>{{ pallet.Name }}</q-item-section>
 								<q-item-section side>{{ pallet.Status == 1 ? 'Open' : 'Closed' }}</q-item-section>
+								<q-item-section side top>
+									<q-badge color="teal" :label="pallet.Total" />
+								</q-item-section>
 								<q-menu touch-position context-menu>
 									<q-list dense style="min-width: 100px">
 										<q-item clickable v-close-popup>
@@ -176,9 +179,6 @@
 				columns: [
 					{ name: 'Serial', label: 'Serial', field: 'Serial', sortable: true },
 					{ name: 'Product', label: 'Product', field: 'Product', sortable: true },
-					{ name: 'PalletTypeID', label: 'Pallet Type', field: 'PalletTypeID', sortable: true },
-					{ name: 'ProductTypesID', label: 'Product Types', field: 'ProductTypesID', sortable: true },
-					{ name: 'OtherProductsID', label: 'Other Products', field: 'OtherProductsID', sortable: true },
 					{ name: 'OldPallet', label: 'Old Pallet', field: 'OldPallet', sortable: true },
 					{ name: 'Qty', label: 'Qty', field: 'Qty', sortable: true },
 					{ name: 'Case', label: 'Case', field: 'Case', sortable: true },
@@ -266,8 +266,13 @@
 						})
 				}
 			},
-			closePallet() {
+			async closePallet() {
 				if (this.palletData.length) {
+					await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
+						.update('LN_InternalPallet')
+						.set({ Status: 0 })
+						.where(`PalletID='${pallet.PalletID}'`)
+						.execute()
 				} else {
 					this.$q.notify({
 						type: 'negative',
@@ -320,8 +325,33 @@
 			)[0]
 			console.log(this.setting)
 			this.pallets = await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
-				.select('*')
-				.from('LN_InternalPallet')
+				.myQuery(
+					`SELECT
+	LN_InternalPallet.PalletID,
+	LN_InternalPallet.Name,
+	LN_InternalPallet.Status,
+	LN_InternalPallet.Operator,
+	LN_InternalPallet.[Date],
+	LN_InternalPallet.PalletTypeID,
+	LN_InternalPallet.ProductTypesID,
+	LN_InternalPallet.OtherProductsID,
+	COUNT(LN_Inventory.PalletID) AS Total
+FROM
+	dbo.LN_InternalPallet
+	LEFT JOIN
+	dbo.LN_Inventory
+	ON
+		LN_InternalPallet.PalletID = LN_Inventory.PalletID
+GROUP BY
+	LN_InternalPallet.PalletID,
+	LN_InternalPallet.Name,
+	LN_InternalPallet.Status,
+	LN_InternalPallet.Operator,
+	LN_InternalPallet.[Date],
+	LN_InternalPallet.PalletTypeID,
+	LN_InternalPallet.ProductTypesID,
+	LN_InternalPallet.OtherProductsID`
+				)
 				.execute()
 			console.log(this.setting)
 

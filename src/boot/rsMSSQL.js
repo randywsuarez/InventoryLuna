@@ -30,8 +30,15 @@ export default async ({ Vue }) => {
 			}
 		}
 
-		myQuery(query) {
-			this.query = query
+		myQuery(query, parameters) {
+			if (!parameters) {
+				this.query = query
+			} else {
+				this.query = {
+					text: query,
+					values: parameters,
+				}
+			}
 			return this
 		}
 
@@ -149,8 +156,15 @@ export default async ({ Vue }) => {
 			}
 		}
 
-		myQuery(query) {
-			this.query = query
+		myQuery(query, parameters) {
+			if (!parameters) {
+				this.query = query
+			} else {
+				this.query = {
+					text: query,
+					values: parameters,
+				}
+			}
 			return this
 		}
 
