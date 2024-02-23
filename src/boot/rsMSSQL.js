@@ -112,6 +112,15 @@ export default async ({ Vue }) => {
 			this.query += ` SET ${sets}`
 			return this
 		}
+		set(fieldsObj) {
+			const sets = Object.entries(fieldsObj)
+				.map(([field, value]) => `${field} = ${typeof value === 'string' ? `'${value}'` : value}`)
+				.join(', ')
+
+			this.query += ` SET ${sets}`
+
+			return this
+		}
 
 		delete(table) {
 			this.query = `DELETE FROM ${table}`
@@ -120,6 +129,47 @@ export default async ({ Vue }) => {
 
 		value(value) {
 			this.query += ` = ${typeof value === 'string' ? `'${value}'` : value}`
+			return this
+		}
+
+		valuesArray(arrayOfFields) {
+			const fields = Object.keys(arrayOfFields[0]).join(', ')
+			const values = arrayOfFields
+				.map(
+					(fieldsObj) =>
+						'(' +
+						Object.values(fieldsObj)
+							.map((value) =>
+								value === 'NEWID()' || value === 'GETDATE()'
+									? value
+									: typeof value === 'string'
+									? `'${value}'`
+									: value
+							)
+							.join(', ') +
+						')'
+				)
+				.join(', ')
+
+			this.query += ` (${fields}) VALUES ${values}`
+			console.log(this.query)
+			return this
+		}
+
+		fields(fieldsObj) {
+			const fields = Object.keys(fieldsObj).join(', ')
+			const values = Object.values(fieldsObj)
+				.map((value) =>
+					value === 'NEWID()' || value === 'GETDATE()'
+						? value
+						: typeof value === 'string'
+						? `'${value}'`
+						: value
+				)
+				.join(', ')
+
+			this.query += ` (${fields}) VALUES (${values})`
+
 			return this
 		}
 
@@ -195,6 +245,22 @@ export default async ({ Vue }) => {
 
 		insert(table) {
 			this.query = `INSERT INTO ${table}`
+			return this
+		}
+		fields(fieldsObj) {
+			const fields = Object.keys(fieldsObj).join(', ')
+			const values = Object.values(fieldsObj)
+				.map((value) =>
+					value === 'NEWID()' || value === 'GETDATE()'
+						? value
+						: typeof value === 'string'
+						? `'${value}'`
+						: value
+				)
+				.join(', ')
+
+			this.query += ` (${fields}) VALUES (${values})`
+
 			return this
 		}
 
