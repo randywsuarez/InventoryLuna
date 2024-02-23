@@ -134,6 +134,17 @@
 								</q-item-section>
 								<q-menu touch-position context-menu>
 									<q-list dense style="min-width: 100px">
+										<q-item
+											clickable
+											v-close-popup
+											@click="removePallet(pallet.PalletID, pallet.Total)"
+											v-if="pallet.Total == 0 && pallet.Status == 1"
+										>
+											<q-item-section avatar>
+												<q-icon color="primary" name="remove" />
+											</q-item-section>
+											<q-item-section>Remove Pallet</q-item-section>
+										</q-item>
 										<q-item clickable v-close-popup>
 											<q-item-section avatar>
 												<q-icon color="primary" name="fa-solid fa-file-pdf" />
@@ -213,7 +224,7 @@
 				this.OtherProducts = this.OtherProducts.filter((v) => v.parent == this.pid.ProductTypesID)
 			},
 			async createPallet() {
-				if (!this.pid.hasOwnProperty('PalletID')) {
+				if (!this.pid.PalletID) {
 					this.pid['PalletID'] = 'NEWID()'
 					this.pid['Date'] = 'GETDATE()'
 					this.pid['Operator'] = 'test'
@@ -232,6 +243,27 @@
 						.set(this.setting)
 						.where(`SettingID='${this.setting.SettingID}'`)
 						.execute()
+				}
+			},
+			async removePallet(id, cant) {
+				console.log(id, cant)
+				if (cant == 0) {
+					this.$q.loading.show()
+					this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
+						.delete('LN_InternalPallet')
+						.where(`PalletID='${id}'`)
+						.execute()
+					this.$q.notify({
+						type: 'positive',
+						message: `This palette was removed.`,
+					})
+					await this.rsLoad()
+					this.$q.loading.hide()
+				} else {
+					this.$q.notify({
+						type: 'negative',
+						message: `This palette isn't empty.`,
+					})
 				}
 			},
 			async enviarCorreo() {
@@ -303,6 +335,37 @@
 					})
 				}
 			},
+			async rsLoad() {
+				this.pallets = await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
+					.myQuery(
+						`SELECT
+	LN_InternalPallet.PalletID,
+	LN_InternalPallet.Name,
+	LN_InternalPallet.Status,
+	LN_InternalPallet.Operator,
+	LN_InternalPallet.[Date],
+	LN_InternalPallet.PalletTypeID,
+	LN_InternalPallet.ProductTypesID,
+	LN_InternalPallet.OtherProductsID,
+	COUNT(LN_Inventory.PalletID) AS Total
+FROM
+	dbo.LN_InternalPallet
+	LEFT JOIN
+	dbo.LN_Inventory
+	ON
+		LN_InternalPallet.PalletID = LN_Inventory.PalletID
+GROUP BY
+	LN_InternalPallet.PalletID,
+	LN_InternalPallet.Name,
+	LN_InternalPallet.Status,
+	LN_InternalPallet.Operator,
+	LN_InternalPallet.[Date],
+	LN_InternalPallet.PalletTypeID,
+	LN_InternalPallet.ProductTypesID,
+	LN_InternalPallet.OtherProductsID`
+					)
+					.execute()
+			},
 		},
 		async beforeCreate() {},
 		async mounted() {
@@ -346,37 +409,7 @@
 			this.setting = (
 				await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY).select('*').from('conf_Setting').execute()
 			)[0]
-			console.log(this.setting)
-			this.pallets = await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
-				.myQuery(
-					`SELECT
-	LN_InternalPallet.PalletID,
-	LN_InternalPallet.Name,
-	LN_InternalPallet.Status,
-	LN_InternalPallet.Operator,
-	LN_InternalPallet.[Date],
-	LN_InternalPallet.PalletTypeID,
-	LN_InternalPallet.ProductTypesID,
-	LN_InternalPallet.OtherProductsID,
-	COUNT(LN_Inventory.PalletID) AS Total
-FROM
-	dbo.LN_InternalPallet
-	LEFT JOIN
-	dbo.LN_Inventory
-	ON
-		LN_InternalPallet.PalletID = LN_Inventory.PalletID
-GROUP BY
-	LN_InternalPallet.PalletID,
-	LN_InternalPallet.Name,
-	LN_InternalPallet.Status,
-	LN_InternalPallet.Operator,
-	LN_InternalPallet.[Date],
-	LN_InternalPallet.PalletTypeID,
-	LN_InternalPallet.ProductTypesID,
-	LN_InternalPallet.OtherProductsID`
-				)
-				.execute()
-			console.log(this.setting)
+			await this.rsLoad()
 
 			this.$q.loading.hide()
 		},
