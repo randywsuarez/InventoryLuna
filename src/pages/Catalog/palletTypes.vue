@@ -30,20 +30,21 @@
 						<template v-slot:body="props">
 							<q-tr :props="props" @dblclick="openEditDialog(props.row)">
 								<q-td v-for="col in props.cols" :key="col.name" :props="props">
-									{{ props.row[col.name] }}
+									{{
+										col.name === 'ProductTypesID'
+											? getProductTypeName(props.row[col.name])
+											: props.row[col.name]
+									}}
 								</q-td>
+								<q-menu ref="editMenu" context-menu>
+									<q-list>
+										<q-item clickable @click="openEditDialog(props.row)">
+											<q-item-section>Edit</q-item-section>
+										</q-item>
+									</q-list>
+								</q-menu>
 							</q-tr>
 						</template>
-
-						<!-- Menú contextual para editar -->
-
-						<q-menu ref="editMenu" context-menu>
-							<q-list>
-								<q-item clickable @click="openEditDialog(contextMenu.row)">
-									<q-item-section>Edit</q-item-section>
-								</q-item>
-							</q-list>
-						</q-menu>
 					</q-table>
 				</q-card>
 			</div>
@@ -64,6 +65,16 @@
 							standout="bg-teal text-white"
 							v-model="form.Description"
 							label="Description"
+						/>
+
+						<q-select
+							class="col-12"
+							standout="bg-teal text-white"
+							v-model="form.ProductTypesID"
+							:options="ProductTypes"
+							label="Product Types"
+							emit-value
+							map-options
 						/>
 						<q-checkbox v-model="form.Status" label="Active" :true-value="1" :false-value="0" />
 					</div>
@@ -101,6 +112,16 @@
 						align: 'left',
 					},
 					{
+						name: 'ProductTypesID',
+						label: 'Product Types',
+						field: 'ProductTypesID',
+						sortable: true,
+						align: 'left',
+						/* format: (val) => {
+							return this.ProductTypes.find((v) => v.value == val).Description
+						}, */
+					},
+					{
 						name: 'Status',
 						label: 'Status',
 						field: 'Status',
@@ -116,9 +137,19 @@
 				rowCount: 10,
 				dialog: false,
 				newr: false,
+				ProductTypes: [],
 			}
 		},
 		methods: {
+			getProductTypeName(ProductTypesID) {
+				console.log(
+					ProductTypesID,
+					this.ProductTypes.find((type) => type.value === ProductTypesID)
+				)
+				return ProductTypesID
+					? this.ProductTypes.find((type) => type.value === ProductTypesID).label
+					: ''
+			},
 			convertCheckboxValue(value) {
 				return value ? 1 : 0
 			},
@@ -172,6 +203,16 @@
 		},
 		async beforeCreate() {},
 		async mounted() {
+			let r = await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
+				.select('*')
+				.from('conf_ProductTypes')
+				.execute()
+			for (let x of r) {
+				this.ProductTypes.push({
+					label: x.Description,
+					value: x.ProductTypesID,
+				})
+			}
 			await this.infoGet()
 		},
 	}
