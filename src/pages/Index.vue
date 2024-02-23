@@ -6,6 +6,7 @@
 					<div class="row col">
 						<div class="row col-12">
 							<q-select
+								ref="ProductTypes"
 								class="col-3"
 								standout="bg-teal text-white"
 								v-model="pid.ProductTypesID"
@@ -16,6 +17,7 @@
 								map-options
 							/>
 							<q-select
+								ref="PalletTypesID"
 								class="col-3"
 								focus
 								standout="bg-teal text-white"
@@ -26,6 +28,7 @@
 								map-options
 							/>
 							<q-select
+								ref="OtherProductsID"
 								class="col-3"
 								standout="bg-teal text-white"
 								v-model="pid.OtherProductsID"
@@ -46,19 +49,22 @@
 						<q-separator spaced inset />
 						<div class="row col-12" v-if="pid.PalletID">
 							<q-input
+								ref="OldPallet"
 								class="col-3"
 								standout="bg-teal text-white"
 								v-model="form.OldPallet"
 								label="Old Pallet"
 							/>
-							<q-toggle class="col-3" size="xl" v-model="cases" :val="true" label="Case" />
+							<q-toggle ref="cases" class="col-3" size="xl" v-model="cases" :val="true" label="Case" />
 							<q-input
+								ref="Product"
 								class="col-3"
 								standout="bg-teal text-white"
 								v-model="form.Product"
 								label="SKU/UPC"
 							/>
 							<q-input
+								ref="Serial"
 								v-if="!cases"
 								class="col-3"
 								standout="bg-teal text-white"
@@ -66,6 +72,7 @@
 								label="Serial"
 							/>
 							<q-input
+								ref="Qty"
 								v-if="cases"
 								class="col-3"
 								type="number"
@@ -86,6 +93,7 @@
 							:columns="columns"
 							row-key="index"
 							:rows-per-page-options="[0]"
+							:loading="tableLoading"
 						/>
 					</div>
 					<div style="position: absolute; bottom: 0; left: 0; right: 0">
@@ -216,11 +224,20 @@
 					},
 				],
 				palletData: [],
+				tableLoading: false,
 			}
 		},
 		methods: {
 			removeItem(palletID) {
 				console.log(`Remove item with PalletID: ${palletID}`)
+				this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
+					.delete('LN_InternalPallet')
+					.where(`PalletID='${id}'`)
+					.execute()
+				this.$q.notify({
+					type: 'positive',
+					message: `This palette was removed.`,
+				})
 			},
 			filterOther() {
 				/* this.pid.OtherProductsID = ''
@@ -231,6 +248,7 @@
 			async createPallet() {
 				console.log(this.pid)
 				if (!this.pid.PalletID) {
+					this.$q.loading.show()
 					this.pid['PalletID'] = 'NEWID()'
 					this.pid['LastScan'] = 'GETDATE()'
 					this.pid['Operator'] = 'test'
@@ -249,7 +267,34 @@
 						.set(this.setting)
 						.where(`SettingID='${this.setting.SettingID}'`)
 						.execute()
+					this.$refs.OldPallet.focus()
+					this.$q.loading.hide()
 				}
+			},
+			async addItems() {
+				this.tableLoading = true
+				if (this.form.Product.length == 12 && !this.form.Product.includes('#')) {
+					this.form['Type'] = 'UPC'
+				} else this.form['Type'] = 'SKU'
+				this.form['InventoryID'] = 'NEWID()'
+				this.form['LastScan'] = 'GETDATE()'
+				this.form['Operator'] = 'test'
+				await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
+					.insert('LN_Inventory')
+					.fields(this.form)
+					.execute()
+				this.form = {
+					Qty: 1,
+				}
+				this.palletData = await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
+					.select('*')
+					.from('LN_Inventory')
+					.execute()
+				this.tableLoading = false
+				this.form = {
+					Qty: 1,
+				}
+				this.$refs.Product.focus()
 			},
 			async removePallet(id, cant) {
 				console.log(id, cant)
