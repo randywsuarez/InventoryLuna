@@ -44,7 +44,7 @@
 							/>
 						</div>
 						<q-separator spaced inset />
-						<div class="row col-12">
+						<div class="row col-12" v-if="pid.PalletID">
 							<q-input
 								class="col-3"
 								standout="bg-teal text-white"
@@ -80,7 +80,7 @@
 					</div>
 					<div>
 						<q-table
-							style="height: 70vh"
+							style="height: calc(80.3vh - 56.57px)"
 							title="Scanned Units"
 							:data="palletData"
 							:columns="columns"
@@ -88,7 +88,7 @@
 							:rows-per-page-options="[0]"
 						/>
 					</div>
-					<div class="col-12">
+					<div style="position: absolute; bottom: 0; left: 0; right: 0">
 						<q-btn
 							size="22px"
 							color="red"
@@ -98,8 +98,18 @@
 						/>
 					</div>
 				</q-card>
+
+				<!-- <div>
+					<q-btn
+						size="22px"
+						color="red"
+						class="full-width"
+						label="Close Pallet"
+						:disable="!palletData.length"
+					/>
+				</div> -->
 			</div>
-			<div class="col-3 q-pa-sm">
+			<div class="col-3 q-pa-sm" name="items">
 				<q-card class="card" style="height: 90vh">
 					<q-card-section>
 						<div class="text-h6">Pallet List</div>
@@ -184,11 +194,21 @@
 					{ name: 'Case', label: 'Case', field: 'Case', sortable: true },
 					{ name: 'Operator', label: 'Operator', field: 'Operator', sortable: true },
 					{ name: 'Date', label: 'Date', field: 'Date', sortable: true },
+					{
+						name: 'Actions',
+						label: 'Actions',
+						align: 'center',
+						field: 'PalletID',
+						format: (value) => `<q-btn icon="remove" @click="removeItem(value)" />`,
+					},
 				],
 				palletData: [],
 			}
 		},
 		methods: {
+			removeItem(palletID) {
+				console.log(`Remove item with PalletID: ${palletID}`)
+			},
 			filterOther() {
 				this.OtherProducts = this.OtherProducts.filter((v) => v.parent == this.pid.ProductTypesID)
 			},
@@ -266,6 +286,7 @@
 						})
 				} else {
 					this.pid = this.pallets.find((v) => v.PalletID == id)
+					console.log(this.pid)
 				}
 			},
 			async closePallet() {

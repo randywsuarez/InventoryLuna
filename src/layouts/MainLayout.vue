@@ -13,7 +13,7 @@
 							<q-item clickable v-close-popup to="/">
 								<q-item-section>Open...</q-item-section>
 							</q-item>
-							<q-item clickable v-close-popup>
+							<q-item clickable v-close-popup @click="reloadPage">
 								<q-item-section>New</q-item-section>
 							</q-item>
 							<q-separator />
@@ -194,6 +194,9 @@
 			}
 		},
 		methods: {
+			reloadPage() {
+				window.location.reload()
+			},
 			closeWindow() {
 				remote.getCurrentWindow().close()
 			},
