@@ -39,7 +39,7 @@
 								size="22px"
 								color="green"
 								class="col-3"
-								label="CREATE PALLET"
+								:label="`${pid.PalletID ? 'UPDATE PALLET' : 'CREATE PALLET'}`"
 								@click="createPallet()"
 							/>
 						</div>
@@ -264,6 +264,8 @@
 						.onDismiss(() => {
 							// console.log('I am triggered on both OK and Cancel')
 						})
+				} else {
+					this.pid = this.pallets.find((v) => v.PalletID == id)
 				}
 			},
 			async closePallet() {
