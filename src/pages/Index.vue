@@ -7,10 +7,20 @@
 						<div class="row col-12">
 							<q-select
 								class="col-3"
+								standout="bg-teal text-white"
+								v-model="pid.ProductTypesID"
+								:options="ProductTypes"
+								label="Product Types"
+								@input="filterOther"
+								emit-value
+								map-options
+							/>
+							<q-select
+								class="col-3"
 								focus
 								standout="bg-teal text-white"
-								v-model="pid.PalletTypeID"
-								:options="PalletTypes"
+								v-model="pid.PalletTypesID"
+								:options="PalletTypesOp"
 								label="Pallet Type"
 								emit-value
 								map-options
@@ -18,20 +28,10 @@
 							<q-select
 								class="col-3"
 								standout="bg-teal text-white"
-								v-model="pid.ProductTypesID"
-								:options="ProductTypes"
-								label="Product Types"
-								@change="filterOther"
-								emit-value
-								map-options
-							/>
-							<q-select
-								class="col-3"
-								standout="bg-teal text-white"
 								v-model="pid.OtherProductsID"
-								:options="OtherProducts"
+								:options="OtherProductsOp"
 								label="Other Product"
-								:disable="!pid.ProductTypesID"
+								:disable="!OtherProductsOp.length"
 								emit-value
 								map-options
 							/>
@@ -183,6 +183,8 @@
 				PalletTypes: [],
 				ProductTypes: [],
 				OtherProducts: [],
+				PalletTypesOp: [],
+				OtherProductsOp: [],
 				pallets: [],
 				setting: [],
 				pid: {
@@ -221,16 +223,20 @@
 				console.log(`Remove item with PalletID: ${palletID}`)
 			},
 			filterOther() {
-				this.OtherProducts = this.OtherProducts.filter((v) => v.parent == this.pid.ProductTypesID)
+				/* this.pid.OtherProductsID = ''
+				this.pid.PalletTypesID = '' */
+				this.OtherProductsOp = this.OtherProducts.filter((v) => v.parent == this.pid.ProductTypesID)
+				this.PalletTypesOp = this.PalletTypes.filter((v) => v.parent == this.pid.ProductTypesID)
 			},
 			async createPallet() {
+				console.log(this.pid)
 				if (!this.pid.PalletID) {
 					this.pid['PalletID'] = 'NEWID()'
-					this.pid['Date'] = 'GETDATE()'
+					this.pid['LastScan'] = 'GETDATE()'
 					this.pid['Operator'] = 'test'
 					this.pid['Status'] = 1
 					this.pid['Name'] = `${this.setting.PalletPrefix}-${
-						this.PalletTypes.find((v) => v.value == this.pid.PalletTypeID).Code
+						this.PalletTypes.find((v) => v.value == this.pid.PalletTypesID).Code
 					}${await this.formatID(this.setting.PalletNumber)}`
 					console.log(this.pid.Name)
 					this.pid = await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
@@ -343,8 +349,8 @@
 	LN_InternalPallet.Name,
 	LN_InternalPallet.Status,
 	LN_InternalPallet.Operator,
-	LN_InternalPallet.[Date],
-	LN_InternalPallet.PalletTypeID,
+	LN_InternalPallet.LastScan,
+	LN_InternalPallet.PalletTypesID,
 	LN_InternalPallet.ProductTypesID,
 	LN_InternalPallet.OtherProductsID,
 	COUNT(LN_Inventory.PalletID) AS Total
@@ -359,8 +365,8 @@ GROUP BY
 	LN_InternalPallet.Name,
 	LN_InternalPallet.Status,
 	LN_InternalPallet.Operator,
-	LN_InternalPallet.[Date],
-	LN_InternalPallet.PalletTypeID,
+	LN_InternalPallet.LastScan,
+	LN_InternalPallet.PalletTypesID,
 	LN_InternalPallet.ProductTypesID,
 	LN_InternalPallet.OtherProductsID`
 					)
@@ -382,6 +388,7 @@ GROUP BY
 				this.PalletTypes.push({
 					label: x.Description,
 					value: x.PalletTypesID,
+					parent: x.ProductTypesID,
 					Code: x.Code,
 				})
 			}
