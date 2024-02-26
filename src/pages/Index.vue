@@ -124,48 +124,50 @@
 					</q-card-section>
 					<q-separator />
 					<q-card-section scroll>
-						<q-list bordered separator v-for="(pallet, key) in pallets" :key="key">
-							<q-item clickable v-ripple @click="actionPallet(pallet.PalletID)">
-								<q-item-section>{{ pallet.Name }}</q-item-section>
-								<q-item-section side>{{ pallet.Status == 1 ? 'Open' : 'Closed' }}</q-item-section>
-								<q-item-section side top>
-									<q-badge color="teal" :label="pallet.Total" />
-								</q-item-section>
-								<q-menu touch-position context-menu>
-									<q-list dense style="min-width: 100px">
-										<q-item
-											clickable
-											v-close-popup
-											@click="removePallet(pallet.PalletID, pallet.Total)"
-											v-if="pallet.Total == 0 && pallet.Status == 1"
-										>
-											<q-item-section avatar>
-												<q-icon color="primary" name="remove" />
-											</q-item-section>
-											<q-item-section>Remove Pallet</q-item-section>
-										</q-item>
-										<q-item clickable v-close-popup v-if="pallet.Total > 0 && pallet.Status == 0">
-											<q-item-section avatar>
-												<q-icon color="primary" name="fa-solid fa-file-pdf" />
-											</q-item-section>
-											<q-item-section>Report Pallet</q-item-section>
-										</q-item>
-										<q-item clickable v-close-popup v-if="pallet.Total > 0 && pallet.Status == 0">
-											<q-item-section avatar>
-												<q-icon color="primary" name="fa-solid fa-file-excel" />
-											</q-item-section>
-											<q-item-section>Report Sales</q-item-section>
-										</q-item>
-										<q-item clickable v-close-popup v-if="pallet.Total > 0 && pallet.Status == 0">
-											<q-item-section avatar>
-												<q-icon color="primary" name="fa-solid fa-envelope" />
-											</q-item-section>
-											<q-item-section>Send by Email</q-item-section>
-										</q-item>
-									</q-list>
-								</q-menu>
-							</q-item>
-						</q-list>
+						<q-scroll-area style="height: 75vh; max-width: 100%">
+							<q-list bordered separator v-for="(pallet, key) in filteredPallets" :key="key">
+								<q-item clickable v-ripple @click="actionPallet(pallet.PalletID)">
+									<q-item-section>{{ pallet.Name }}</q-item-section>
+									<q-item-section side>{{ pallet.Status == 1 ? 'Open' : 'Closed' }}</q-item-section>
+									<q-item-section side top>
+										<q-badge color="teal" :label="pallet.Total" />
+									</q-item-section>
+									<q-menu touch-position context-menu>
+										<q-list dense style="min-width: 100px">
+											<q-item
+												clickable
+												v-close-popup
+												@click="removePallet(pallet.PalletID, pallet.Total)"
+												v-if="pallet.Total == 0 && pallet.Status == 1"
+											>
+												<q-item-section avatar>
+													<q-icon color="primary" name="remove" />
+												</q-item-section>
+												<q-item-section>Remove Pallet</q-item-section>
+											</q-item>
+											<q-item clickable v-close-popup v-if="pallet.Total > 0 && pallet.Status == 0">
+												<q-item-section avatar>
+													<q-icon color="primary" name="fa-solid fa-file-pdf" />
+												</q-item-section>
+												<q-item-section>Report Pallet</q-item-section>
+											</q-item>
+											<q-item clickable v-close-popup v-if="pallet.Total > 0 && pallet.Status == 0">
+												<q-item-section avatar>
+													<q-icon color="primary" name="fa-solid fa-file-excel" />
+												</q-item-section>
+												<q-item-section>Report Sales</q-item-section>
+											</q-item>
+											<q-item clickable v-close-popup v-if="pallet.Total > 0 && pallet.Status == 0">
+												<q-item-section avatar>
+													<q-icon color="primary" name="fa-solid fa-envelope" />
+												</q-item-section>
+												<q-item-section>Send by Email</q-item-section>
+											</q-item>
+										</q-list>
+									</q-menu>
+								</q-item>
+							</q-list>
+						</q-scroll-area>
 					</q-card-section>
 				</q-card>
 			</div>
@@ -218,6 +220,15 @@
 				palletData: [],
 				tableLoading: false,
 			}
+		},
+		computed: {
+			filteredPallets() {
+				if (this.search) {
+					return this.pallets.filter((v) => v.Name.includes(this.search))
+				} else {
+					return this.pallets // Retorna todos los pallets si no hay término de búsqueda
+				}
+			},
 		},
 		methods: {
 			removeItem(palletID) {
