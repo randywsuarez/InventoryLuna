@@ -12,9 +12,9 @@
 								v-model="pid.ProductTypesID"
 								:options="ProductTypes"
 								label="Product Types"
-								@input="filterOther"
 								emit-value
 								map-options
+								@input="filterOther(pid.ProductTypesID)"
 							/>
 							<q-select
 								ref="PalletTypesID"
@@ -44,6 +44,7 @@
 								class="col-3"
 								:label="`${pid.PalletID ? 'UPDATE PALLET' : 'CREATE PALLET'}`"
 								@click="createPallet()"
+								:disable="!pid.ProductTypesID && !pid.PalletTypesID"
 							/>
 						</div>
 						<q-separator spaced inset />
@@ -106,16 +107,6 @@
 						/>
 					</div>
 				</q-card>
-
-				<!-- <div>
-					<q-btn
-						size="22px"
-						color="red"
-						class="full-width"
-						label="Close Pallet"
-						:disable="!palletData.length"
-					/>
-				</div> -->
 			</div>
 			<div class="col-3 q-pa-sm" name="items">
 				<q-card class="card" style="height: 90vh">
@@ -153,19 +144,19 @@
 											</q-item-section>
 											<q-item-section>Remove Pallet</q-item-section>
 										</q-item>
-										<q-item clickable v-close-popup>
+										<q-item clickable v-close-popup v-if="pallet.Total > 0 && pallet.Status == 0">
 											<q-item-section avatar>
 												<q-icon color="primary" name="fa-solid fa-file-pdf" />
 											</q-item-section>
 											<q-item-section>Report Pallet</q-item-section>
 										</q-item>
-										<q-item clickable v-close-popup>
+										<q-item clickable v-close-popup v-if="pallet.Total > 0 && pallet.Status == 0">
 											<q-item-section avatar>
 												<q-icon color="primary" name="fa-solid fa-file-excel" />
 											</q-item-section>
 											<q-item-section>Report Sales</q-item-section>
 										</q-item>
-										<q-item clickable v-close-popup>
+										<q-item clickable v-close-popup v-if="pallet.Total > 0 && pallet.Status == 0">
 											<q-item-section avatar>
 												<q-icon color="primary" name="fa-solid fa-envelope" />
 											</q-item-section>
@@ -197,6 +188,7 @@
 				setting: [],
 				pid: {
 					PalletID: '',
+					ProductTypesID: '',
 				},
 				form: {
 					Qty: 1,
@@ -239,27 +231,31 @@
 					message: `This palette was removed.`,
 				})
 			},
-			filterOther() {
-				/* this.pid.OtherProductsID = ''
-				this.pid.PalletTypesID = '' */
-				this.OtherProductsOp = this.OtherProducts.filter((v) => v.parent == this.pid.ProductTypesID)
-				this.PalletTypesOp = this.PalletTypes.filter((v) => v.parent == this.pid.ProductTypesID)
+			filterOther(id) {
+				if (!id) {
+					console.error('this.pid is undefined')
+					return
+				}
+				this.OtherProductsOp = this.OtherProducts.filter((v) => v.parent == id)
+				this.PalletTypesOp = this.PalletTypes.filter((v) => v.parent == id)
 			},
 			async createPallet() {
 				console.log(this.pid)
+				let result = ''
 				if (!this.pid.PalletID) {
 					this.$q.loading.show()
 					this.pid['PalletID'] = 'NEWID()'
 					this.pid['LastScan'] = 'GETDATE()'
 					this.pid['Operator'] = 'test'
 					this.pid['Status'] = 1
-					this.pid['Name'] = `${this.setting.PalletPrefix}-${
-						this.PalletTypes.find((v) => v.value == this.pid.PalletTypesID).Code
-					}${await this.formatID(this.setting.PalletNumber)}`
-					console.log(this.pid.Name)
-					this.pid = await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
+					this.pid['Name'] = `${this.setting.PalletPrefix}-${await this.PalletTypes.find(
+						(v) => v.value == this.pid.PalletTypesID
+					).Code}${await this.formatID(this.setting.PalletNumber)}`
+					console.log(this.pid)
+					result = await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
 						.insert('LN_InternalPallet')
 						.fields(this.pid)
+						.id('PalletID')
 						.execute()
 					this.setting.PalletNumber++
 					await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
@@ -267,6 +263,7 @@
 						.set(this.setting)
 						.where(`SettingID='${this.setting.SettingID}'`)
 						.execute()
+					console.log(result)
 					this.$refs.OldPallet.focus()
 					this.$q.loading.hide()
 				}
@@ -368,7 +365,9 @@
 							// console.log('I am triggered on both OK and Cancel')
 						})
 				} else {
+					//await this.catalog()
 					this.pid = this.pallets.find((v) => v.PalletID == id)
+					this.filterOther(this.pid.ProductTypesID)
 					console.log(this.pid)
 				}
 			},
@@ -417,6 +416,41 @@ GROUP BY
 					)
 					.execute()
 			},
+			async catalog() {
+				let pt = await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
+					.select('*')
+					.from('conf_PalletTypes')
+					.execute()
+				for (let x of pt) {
+					this.PalletTypes.push({
+						label: x.Description,
+						value: x.PalletTypesID,
+						parent: x.ProductTypesID,
+						Code: x.Code,
+					})
+				}
+				let prt = await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
+					.select('*')
+					.from('conf_ProductTypes')
+					.execute()
+				for (let x of prt) {
+					this.ProductTypes.push({
+						label: x.Description,
+						value: x.ProductTypesID,
+					})
+				}
+				let op = await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
+					.select('*')
+					.from('conf_OtherProducts')
+					.execute()
+				for (let x of op) {
+					this.OtherProducts.push({
+						label: x.Description,
+						value: x.OtherProductsID,
+						parent: x.ProductTypesID,
+					})
+				}
+			},
 		},
 		async beforeCreate() {},
 		async mounted() {
@@ -425,42 +459,10 @@ GROUP BY
 			const ventanaActual = remote.getCurrentWindow()
 			ventanaActual.maximize()
 			this.$q.loading.show()
-			let pt = await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
-				.select('*')
-				.from('conf_PalletTypes')
-				.execute()
-			for (let x of pt) {
-				this.PalletTypes.push({
-					label: x.Description,
-					value: x.PalletTypesID,
-					parent: x.ProductTypesID,
-					Code: x.Code,
-				})
-			}
-			let prt = await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
-				.select('*')
-				.from('conf_ProductTypes')
-				.execute()
-			for (let x of prt) {
-				this.ProductTypes.push({
-					label: x.Description,
-					value: x.ProductTypesID,
-				})
-			}
-			let op = await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
-				.select('*')
-				.from('conf_OtherProducts')
-				.execute()
-			for (let x of op) {
-				this.OtherProducts.push({
-					label: x.Description,
-					value: x.OtherProductsID,
-					parent: x.ProductTypesID,
-				})
-			}
 			this.setting = (
 				await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY).select('*').from('conf_Setting').execute()
 			)[0]
+			await this.catalog()
 			await this.rsLoad()
 
 			this.$q.loading.hide()
