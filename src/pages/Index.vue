@@ -52,42 +52,45 @@
 						</div>
 						<q-separator spaced inset />
 						<div class="row col-12" v-if="pid.PalletID">
-							<q-input
+							<!-- <q-input
 								ref="OldPallet"
 								class="col-3"
 								standout="bg-teal text-white"
 								v-model="form.OldPallet"
 								label="Old Pallet"
-							/>
-							<q-toggle ref="cases" class="col-3" size="xl" v-model="cases" :val="true" label="Case" />
+							/> -->
+							<q-toggle ref="cases" class="col-2" size="xl" v-model="cases" :val="true" label="Case" />
 							<q-input
 								ref="Product"
-								class="col-3"
+								class="col-4"
 								standout="bg-teal text-white"
 								v-model="form.Product"
 								label="SKU/UPC"
+								@input="upperCase('Product')"
 							/>
 							<q-input
 								ref="Serial"
 								v-if="!cases"
-								class="col-3"
+								class="col-4"
 								standout="bg-teal text-white"
 								v-model="form.Serial"
 								label="Serial"
+								@input="upperCase('Serial')"
 							/>
 							<q-input
 								ref="Qty"
 								v-if="cases"
-								class="col-3"
+								class="col-4"
 								type="number"
 								standout="bg-teal text-white"
 								v-model="form.Qty"
 								label="QTY"
 							/>
+
+							<div class="col-2">
+								<q-btn size="22px" color="green" class="full-width" label="ADD" @click="addItems" />
+							</div>
 						</div>
-					</div>
-					<div class="col-12">
-						<q-btn size="22px" color="green" class="full-width" label="ADD" @click="addItems" />
 					</div>
 					<div>
 						<q-table
@@ -105,7 +108,7 @@
 									<q-btn
 										v-if="props.col.name === 'Actions'"
 										icon="remove"
-										@click="removeItem(props.row.PalletID)"
+										@click="removeItem(props.row.InventoryID)"
 										color="red"
 									/>
 									<!-- De lo contrario, simplemente mostramos el valor en la celda -->
@@ -123,6 +126,7 @@
 							class="full-width"
 							label="Close Pallet"
 							:disable="!palletData.length"
+							@click="closePallet"
 						/>
 					</div>
 				</q-card>
@@ -223,7 +227,7 @@
 				columns: [
 					{ name: 'Serial', label: 'Serial', field: 'Serial', sortable: true },
 					{ name: 'Product', label: 'Product', field: 'Product', sortable: true },
-					{ name: 'OldPallet', label: 'Old Pallet', field: 'OldPallet', sortable: true },
+					//{ name: 'OldPallet', label: 'Old Pallet', field: 'OldPallet', sortable: true },
 					{ name: 'Qty', label: 'Qty', field: 'Qty', sortable: true },
 					{
 						name: 'Case',
@@ -233,12 +237,18 @@
 						format: (v) => (v ? 'YES' : 'NO'),
 					},
 					{ name: 'Operator', label: 'Operator', field: 'Operator', sortable: true },
-					{ name: 'Date', label: 'Date', field: 'Date', sortable: true, format: (v) => moment(v) },
+					{
+						name: 'LastScan',
+						label: 'Date',
+						field: 'LastScan',
+						sortable: true,
+						format: (v) => moment(v),
+					},
 					{
 						name: 'Actions',
 						label: 'Actions',
 						align: 'center',
-						field: 'PalletID',
+						field: 'InventoryID',
 					},
 				],
 				palletData: [],
@@ -255,16 +265,33 @@
 			},
 		},
 		methods: {
-			removeItem(palletID) {
-				console.log(`Remove item with PalletID: ${palletID}`)
-				this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
-					.delete('LN_InternalPallet')
-					.where(`PalletID='${id}'`)
+			upperCase(info) {
+				this.form[info] = this.form[info].toUpperCase()
+			},
+			async removeItem(InventoryID) {
+				console.log(`Remove item with PalletID: ${InventoryID}`)
+				let r = await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
+					.delete('LN_Inventory')
+					.where(`InventoryID='${InventoryID}'`)
 					.execute()
-				this.$q.notify({
-					type: 'positive',
-					message: `This palette was removed.`,
-				})
+				console.log(r)
+				if (r.status) {
+					this.$q.notify({
+						type: 'positive',
+						message: `This palette was removed.`,
+					})
+					this.palletData = await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
+						.select('*')
+						.from('LN_Inventory')
+						.execute()
+					await this.rsLoad()
+					this.$refs.Product.focus()
+				} else {
+					this.$q.notify({
+						type: 'negative',
+						message: `The unit could not be removed.`,
+					})
+				}
 			},
 			filterOther(id) {
 				if (!id) {
@@ -390,6 +417,7 @@
 								.where(`PalletID='${pallet.PalletID}'`)
 								.execute()
 							this.pid = pallet
+							this.actionPallet2()
 							this.$q.loading.hide()
 						})
 						.onOk(() => {
@@ -406,7 +434,10 @@
 					this.pid = this.pallets.find((v) => v.PalletID == id)
 					this.filterOther(this.pid.ProductTypesID)
 					console.log(this.pid)
+					this.actionPallet2()
 				}
+			},
+			async actionPallet2() {
 				this.tableLoading = false
 				this.form = {
 					Qty: 1,
@@ -419,11 +450,18 @@
 			},
 			async closePallet() {
 				if (this.palletData.length) {
-					await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
+					console.log(this.pid.PalletID)
+					let r = await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
 						.update('LN_InternalPallet')
 						.set({ Status: 0 })
-						.where(`PalletID='${pallet.PalletID}'`)
+						.where(`PalletID='${this.pid.PalletID}'`)
 						.execute()
+					if (r.status)
+						this.$q.notify({
+							type: 'positive',
+							message: `This palette is closed.`,
+						})
+					window.location.reload()
 				} else {
 					this.$q.notify({
 						type: 'negative',
