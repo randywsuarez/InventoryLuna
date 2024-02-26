@@ -9,6 +9,8 @@ export default async ({ Vue }) => {
 				database: databaseName,
 				options: db.options || {},
 			}
+
+			this.idColumnName = '' // Inicializar idColumnName en el constructor
 		}
 
 		async executeQuery(query) {
@@ -169,10 +171,56 @@ export default async ({ Vue }) => {
 			return this
 		}
 
+		id(idColumnName) {
+			// Método para especificar el nombre de la columna ID
+			this.idColumnName = idColumnName
+			return this
+		}
+
 		async execute() {
-			sessionStorage.setItem('result', this.query)
-			console.log(this.query)
-			return this.executeQuery(this.query)
+			try {
+				const pool = await new sql.ConnectionPool(this.config).connect()
+				const request = pool.request()
+
+				const result = await request.query(this.query)
+
+				await pool.close()
+
+				if (this.query.toLowerCase().includes('insert')) {
+					// Es una operación de inserción
+					const insertedId = this.idColumnName ? result.recordset[0][this.idColumnName] : undefined
+
+					return {
+						status: true,
+						operation: 'insert',
+						insertedId: insertedId,
+						affectedRows: result.rowsAffected[0],
+					}
+				} else if (this.query.toLowerCase().includes('update')) {
+					// Es una operación de actualización
+					return {
+						status: true,
+						operation: 'update',
+						affectedRows: result.rowsAffected[0],
+					}
+				} else if (this.query.toLowerCase().includes('delete')) {
+					// Es una operación de eliminación
+					return {
+						status: true,
+						operation: 'delete',
+						affectedRows: result.rowsAffected[0],
+					}
+				} else {
+					// Es una consulta SELECT u otra operación no manejada específicamente
+					return result.recordset
+				}
+			} catch (error) {
+				console.error(error)
+				return {
+					status: false,
+					error: `Error executing SQL query: ${error.message}`,
+				}
+			}
 		}
 	}
 	Vue.prototype.$rsDB = (databaseName, db) => new RsDB(databaseName, db)
