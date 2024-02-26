@@ -4,7 +4,7 @@
 			<div class="col-9 q-pa-sm" scroll>
 				<q-card class="card" style="height: 90vh">
 					<div class="row col">
-						<div class="row col-12">
+						<div class="row col-12" v-if="!pid.PalletID">
 							<q-select
 								ref="ProductTypes"
 								class="col-3"
@@ -47,6 +47,9 @@
 								:disable="!pid.ProductTypesID && !pid.PalletTypesID"
 							/>
 						</div>
+						<div v-else class="col-12 main titlePallet" style="padding-top: 10px; font-size: 2vw">
+							{{ pid.Name }}
+						</div>
 						<q-separator spaced inset />
 						<div class="row col-12" v-if="pid.PalletID">
 							<q-input
@@ -84,7 +87,7 @@
 						</div>
 					</div>
 					<div class="col-12">
-						<q-btn size="22px" color="green" class="full-width" label="ADD" />
+						<q-btn size="22px" color="green" class="full-width" label="ADD" @click="addItems" />
 					</div>
 					<div>
 						<q-table
@@ -95,7 +98,23 @@
 							row-key="index"
 							:rows-per-page-options="[0]"
 							:loading="tableLoading"
-						/>
+						>
+							<template v-slot:body-cell="props">
+								<q-td :props="props" :key="props.col.name" :class="props.colAlignClass">
+									<!-- Solo aplicamos el botón si la columna es 'Actions' -->
+									<q-btn
+										v-if="props.col.name === 'Actions'"
+										icon="remove"
+										@click="removeItem(props.row.PalletID)"
+										color="red"
+									/>
+									<!-- De lo contrario, simplemente mostramos el valor en la celda -->
+									<div v-else>
+										{{ props.value }}
+									</div>
+								</q-td>
+							</template>
+						</q-table>
 					</div>
 					<div style="position: absolute; bottom: 0; left: 0; right: 0">
 						<q-btn
@@ -206,15 +225,20 @@
 					{ name: 'Product', label: 'Product', field: 'Product', sortable: true },
 					{ name: 'OldPallet', label: 'Old Pallet', field: 'OldPallet', sortable: true },
 					{ name: 'Qty', label: 'Qty', field: 'Qty', sortable: true },
-					{ name: 'Case', label: 'Case', field: 'Case', sortable: true },
+					{
+						name: 'Case',
+						label: 'Case',
+						field: 'Case',
+						sortable: true,
+						format: (v) => (v ? 'YES' : 'NO'),
+					},
 					{ name: 'Operator', label: 'Operator', field: 'Operator', sortable: true },
-					{ name: 'Date', label: 'Date', field: 'Date', sortable: true },
+					{ name: 'Date', label: 'Date', field: 'Date', sortable: true, format: (v) => moment(v) },
 					{
 						name: 'Actions',
 						label: 'Actions',
 						align: 'center',
 						field: 'PalletID',
-						format: (value) => `<q-btn icon="remove" @click="removeItem(value)" />`,
 					},
 				],
 				palletData: [],
@@ -287,6 +311,7 @@
 				this.form['InventoryID'] = 'NEWID()'
 				this.form['LastScan'] = 'GETDATE()'
 				this.form['Operator'] = 'test'
+				this.form['PalletID'] = this.pid.PalletID
 				await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
 					.insert('LN_Inventory')
 					.fields(this.form)
@@ -346,6 +371,7 @@
 				return formattedID
 			},
 			async actionPallet(id) {
+				this.tableLoading = true
 				let pallet = this.pallets.find((v) => v.PalletID == id)
 				if (pallet.Status == 0) {
 					this.$q
@@ -381,6 +407,15 @@
 					this.filterOther(this.pid.ProductTypesID)
 					console.log(this.pid)
 				}
+				this.tableLoading = false
+				this.form = {
+					Qty: 1,
+				}
+				this.palletData = await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
+					.select('*')
+					.from('LN_Inventory')
+					.execute()
+				this.$refs.Product.focus()
 			},
 			async closePallet() {
 				if (this.palletData.length) {
@@ -500,6 +535,14 @@ GROUP BY
 		animation-duration: 0.5s;
 		animation-timing-function: ease-in-out;
 		animation-iteration-count: infinite;
+	}
+	.titlePallet {
+		color: transparent;
+		background: #666666;
+		-webkit-background-clip: text;
+		-moz-background-clip: text;
+		background-clip: text;
+		text-shadow: 0px 3px 3px rgba(255, 255, 255, 0.5);
 	}
 
 	@keyframes glowEffect {
