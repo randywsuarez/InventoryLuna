@@ -168,7 +168,12 @@
 												</q-item-section>
 												<q-item-section>Remove Pallet</q-item-section>
 											</q-item>
-											<q-item clickable v-close-popup v-if="pallet.Total > 0 && pallet.Status == 0">
+											<q-item
+												clickable
+												v-close-popup
+												@click="report(pallet.PalletID)"
+												v-if="pallet.Total > 0 && pallet.Status == 0"
+											>
 												<q-item-section avatar>
 													<q-icon color="primary" name="fa-solid fa-file-pdf" />
 												</q-item-section>
@@ -201,6 +206,9 @@
 <script>
 	import env from '../utils/env'
 	import moment from 'moment'
+	import pdfMake from 'pdfmake'
+	import pdfFonts from 'pdfmake/build/vfs_fonts'
+	import { Console } from 'console'
 	export default {
 		data(r) {
 			return {
@@ -424,7 +432,7 @@
 							// console.log('>>>> second OK catcher')
 						})
 						.onCancel(() => {
-							// console.log('>>>> Cancel')
+							this.tableLoading = false
 						})
 						.onDismiss(() => {
 							// console.log('I am triggered on both OK and Cancel')
@@ -445,6 +453,7 @@
 				this.palletData = await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
 					.select('*')
 					.from('LN_Inventory')
+					.where(`PalletID='${this.pid.PalletID}'`)
 					.execute()
 				this.$refs.Product.focus()
 			},
@@ -534,6 +543,64 @@ GROUP BY
 						parent: x.ProductTypesID,
 					})
 				}
+			},
+			async report(id) {
+				let tb = {
+					style: 'tableExample',
+					table: {
+						headerRows: 1,
+						widths: ['*', '*', '*', '*'],
+						body: [
+							[
+								{ text: 'SKU/UPC', style: 'tableHeader' },
+								{ text: 'SERIAL', style: 'tableHeader' },
+								{ text: 'Type', style: 'tableHeader' },
+								{ text: 'QTY', style: 'tableHeader' },
+							],
+						],
+					},
+					layout: 'lightHorizontalLines',
+					styles: {
+						header: {
+							fontSize: 18,
+							bold: true,
+							margin: [0, 0, 0, 10],
+						},
+						subheader: {
+							fontSize: 16,
+							bold: true,
+							margin: [0, 10, 0, 5],
+						},
+						tableExample: {
+							margin: [0, 5, 0, 15],
+						},
+						tableHeader: {
+							bold: true,
+							fontSize: 13,
+							color: 'black',
+						},
+					},
+				}
+				let units = await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
+					.select('*')
+					.from('LN_Inventory')
+					.where(`PalletID='${id}'`)
+					.execute()
+				console.log(units)
+				for (let info of units) {
+					tb.table.body.push([info.Product, info.Type, info.Serial, info.Qty])
+				}
+				console.log(JSON.stringify(tb))
+				/* let dd = {
+					pageSize: {
+						width: 600,
+						height: 900,
+					},
+					content: [pdf],
+				} */
+				/* pdfMake.vfs = pdfFonts.pdfMake.vfs
+				pdfMake.createPdf(dd).download('Label.PDF')
+				this.dd = dd */
 			},
 		},
 		async beforeCreate() {},
