@@ -208,7 +208,7 @@
 	import moment from 'moment'
 	import pdfMake from 'pdfmake'
 	import pdfFonts from 'pdfmake/build/vfs_fonts'
-	import { Console } from 'console'
+	import JsBarcode from 'jsbarcode'
 	export default {
 		data(r) {
 			return {
