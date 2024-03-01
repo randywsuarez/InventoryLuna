@@ -171,7 +171,7 @@
 											<q-item
 												clickable
 												v-close-popup
-												@click="report(pallet.PalletID)"
+												@click="report(pallet.PalletID, pallet.Name)"
 												v-if="pallet.Total > 0 && pallet.Status == 0"
 											>
 												<q-item-section avatar>
@@ -179,7 +179,7 @@
 												</q-item-section>
 												<q-item-section>Report Pallet</q-item-section>
 											</q-item>
-											<q-item clickable v-close-popup v-if="pallet.Total > 0 && pallet.Status == 0">
+											<!-- <q-item clickable v-close-popup v-if="pallet.Total > 0 && pallet.Status == 0">
 												<q-item-section avatar>
 													<q-icon color="primary" name="fa-solid fa-file-excel" />
 												</q-item-section>
@@ -190,7 +190,7 @@
 													<q-icon color="primary" name="fa-solid fa-envelope" />
 												</q-item-section>
 												<q-item-section>Send by Email</q-item-section>
-											</q-item>
+											</q-item> -->
 										</q-list>
 									</q-menu>
 								</q-item>
@@ -544,7 +544,7 @@ GROUP BY
 					})
 				}
 			},
-			async report(id) {
+			async report(id, name) {
 				let tb = {
 					style: 'tableExample',
 					table: {
@@ -560,6 +560,44 @@ GROUP BY
 						],
 					},
 					layout: 'lightHorizontalLines',
+				}
+				let units = await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
+					.select('*')
+					.from('LN_Inventory')
+					.where(`PalletID='${id}'`)
+					.execute()
+				console.log(units)
+				for (let info of units) {
+					tb.table.body.push([info.Product, info.Serial, info.Type, info.Qty])
+				}
+				//console.log(JSON.stringify(tb))
+				var dd = {
+					pageSize: 'letter',
+					content: [
+						// Primera página
+						/* {
+							text: 'Este es una prueba',
+							style: 'header',
+						},
+						{
+							text: 'Primer Reporte - Orientación Horizontal',
+							style: 'header',
+						},
+						// Contenido de la primera página (puedes agregar más elementos según sea necesario)
+
+						// Salto de página con cambio de orientación
+						{ text: '', pageBreak: 'before' }, */
+
+						// Segunda página con orientación vertical
+						// Contenido de la segunda página (puedes agregar más elementos según sea necesario)
+
+						// Tercera página con la tabla
+						{
+							text: `${name}`,
+							style: 'header',
+						},
+						tb,
+					],
 					styles: {
 						header: {
 							fontSize: 18,
@@ -580,27 +618,13 @@ GROUP BY
 							color: 'black',
 						},
 					},
-				}
-				let units = await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
-					.select('*')
-					.from('LN_Inventory')
-					.where(`PalletID='${id}'`)
-					.execute()
-				console.log(units)
-				for (let info of units) {
-					tb.table.body.push([info.Product, info.Type, info.Serial, info.Qty])
-				}
-				console.log(JSON.stringify(tb))
-				/* let dd = {
-					pageSize: {
-						width: 600,
-						height: 900,
+					defaultStyle: {
+						fontSize: 12,
 					},
-					content: [pdf],
-				} */
-				/* pdfMake.vfs = pdfFonts.pdfMake.vfs
-				pdfMake.createPdf(dd).download('Label.PDF')
-				this.dd = dd */
+				}
+				pdfMake.vfs = pdfFonts.pdfMake.vfs
+				pdfMake.createPdf(dd).download(`${name}.pdf`)
+				this.dd = dd
 			},
 		},
 		async beforeCreate() {},
