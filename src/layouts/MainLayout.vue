@@ -362,7 +362,7 @@
 				env.token
 			)
 
-			/* const actualizacionDisponible = await this.updateService.verificarActualizacion()
+			const actualizacionDisponible = await this.updateService.verificarActualizacion()
 
 			if (actualizacionDisponible.result) {
 				clearInterval(this.intervalId)
@@ -370,7 +370,7 @@
 				this.v['new'] = actualizacionDisponible.version
 				this.v['body'] = actualizacionDisponible.body
 				this.updt = actualizacionDisponible.result
-			} */
+			}
 		},
 		beforeDestroy() {},
 	}

@@ -76,6 +76,9 @@
 								v-model="form.Serial"
 								label="Serial"
 								@input="upperCase('Serial')"
+								@keydown.enter="addItems"
+								@keydown.tab="addItems"
+								:disable="!form.Product"
 							/>
 							<q-input
 								ref="Qty"
@@ -85,10 +88,21 @@
 								standout="bg-teal text-white"
 								v-model="form.Qty"
 								label="QTY"
+								@blur="addItems"
+								@keydown.enter="addItems"
+								@keydown.tab="addItems"
+								:disable="!form.Product"
 							/>
 
 							<div class="col-2">
-								<q-btn size="22px" color="green" class="full-width" label="ADD" @click="addItems" />
+								<q-btn
+									size="22px"
+									color="green"
+									class="full-width"
+									label="ADD"
+									@click="addItems"
+									:disable="tableLoading"
+								/>
 							</div>
 						</div>
 					</div>
@@ -276,6 +290,13 @@
 			upperCase(info) {
 				this.form[info] = this.form[info].toUpperCase()
 			},
+			myUpc() {
+				// Verificar si el valor es numérico y mayor a 12
+				if (!isNaN(this.form.Product) && this.form.Product.length > 12) {
+					// Eliminar el primer carácter
+					this.form.Product = this.form.Product.substring(1)
+				}
+			},
 			async removeItem(InventoryID) {
 				console.log(`Remove item with PalletID: ${InventoryID}`)
 				let r = await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
@@ -291,6 +312,7 @@
 					this.palletData = await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
 						.select('*')
 						.from('LN_Inventory')
+						.where(`PalletID='${this.pid.PalletID}'`)
 						.execute()
 					await this.rsLoad()
 					this.$refs.Product.focus()
@@ -325,7 +347,6 @@
 					result = await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
 						.insert('LN_InternalPallet')
 						.fields(this.pid)
-						.id('PalletID')
 						.execute()
 					this.setting.PalletNumber++
 					await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
@@ -333,14 +354,26 @@
 						.set(this.setting)
 						.where(`SettingID='${this.setting.SettingID}'`)
 						.execute()
-					console.log(result)
-					this.$refs.OldPallet.focus()
+					this.pid = (
+						await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
+							.select('*')
+							.from('LN_InternalPallet')
+							.where(`Name='${this.pid.Name}'`)
+							.execute()
+					)[0]
+					console.log(this.pid)
+					this.$refs.Product.focus()
 					this.$q.loading.hide()
 				}
 			},
 			async addItems() {
 				this.tableLoading = true
-				if (this.form.Product.length == 12 && !this.form.Product.includes('#')) {
+				console.log(this.form)
+				if (
+					this.form.Product.length == 12 &&
+					!this.form.Product.includes('#') &&
+					!isNaN(this.form.Product)
+				) {
 					this.form['Type'] = 'UPC'
 				} else this.form['Type'] = 'SKU'
 				this.form['InventoryID'] = 'NEWID()'
@@ -357,6 +390,7 @@
 				this.palletData = await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
 					.select('*')
 					.from('LN_Inventory')
+					.where(`PalletID='${this.pid.PalletID}'`)
 					.execute()
 				this.tableLoading = false
 				this.form = {
