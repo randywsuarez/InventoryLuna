@@ -46,6 +46,29 @@ class UpdateService {
 			return false
 		}
 	}
+	async vActual(version) {
+		try {
+			console.log('VersionActual')
+			const options = {
+				method: 'GET',
+				headers: {
+					'User-Agent': 'insomnia/2023.5.8',
+					Authorization: this.token,
+				},
+			}
+			const response = await fetch(
+				`https://api.github.com/repos/${this.usuario}/${this.repositorio}/releases/tags/${this.versionActual}`,
+				options
+			)
+			const data = await response.json()
+			console.log(data)
+
+			return { result: true, body: data.body.split('\r\n').map((item) => item.replace('- ', '')) }
+		} catch (error) {
+			console.error('Error al verificar la actualización:', error.message)
+			return { result: false, body: [error.message] }
+		}
+	}
 
 	async descargarYDescomprimir(version) {
 		try {

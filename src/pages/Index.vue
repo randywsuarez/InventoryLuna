@@ -368,6 +368,14 @@
 			},
 			async addItems() {
 				this.tableLoading = true
+				if (this.palletData.some((v) => v.Serial == this.form.Serial)) {
+					this.$q.notify({
+						type: 'negative',
+						message: `This serial: ${this.form.Serial} already exists.`,
+					})
+					this.tableLoading = false
+					return
+				}
 				console.log(this.form)
 				if (
 					this.form.Product.length == 12 &&
@@ -396,6 +404,10 @@
 				this.form = {
 					Qty: 1,
 				}
+				this.$q.notify({
+					type: 'positive',
+					message: `Added serial...`,
+				})
 				this.$refs.Product.focus()
 			},
 			async removePallet(id, cant) {

@@ -16,6 +16,12 @@
 							<q-item clickable v-close-popup @click="reloadPage">
 								<q-item-section>New</q-item-section>
 							</q-item>
+							<q-item clickable v-close-popup to="/inventory">
+								<q-item-section>Inventory List</q-item-section>
+							</q-item>
+							<q-item clickable v-close-popup @click="myVersion">
+								<q-item-section>About</q-item-section>
+							</q-item>
 							<q-separator />
 							<!-- <q-item clickable>
 								<q-item-section>Preferences</q-item-section>
@@ -136,6 +142,28 @@
 				</q-card-actions>
 			</q-card>
 		</q-dialog>
+		<q-dialog v-model="about">
+			<q-card>
+				<q-card-section>
+					<div class="text-h6">About</div>
+				</q-card-section>
+
+				<q-separator />
+
+				<q-card-section style="max-height: 50vh" class="scroll">
+					<ul>
+						<li v-for="item in aVersion.body" :key="item">{{ item }}</li>
+					</ul>
+				</q-card-section>
+
+				<q-separator />
+
+				<q-card-actions align="right">
+					<q-btn flat label="Decline" color="primary" v-close-popup />
+					<q-btn flat label="Accept" color="primary" v-close-popup />
+				</q-card-actions>
+			</q-card>
+		</q-dialog>
 
 		<q-page-container>
 			<router-view />
@@ -144,7 +172,6 @@
 </template>
 <script>
 	import EssentialLink from 'components/EssentialLink.vue'
-	import winDate from '../scripts/updateDate'
 	import UpdateService from '../utils/updateService'
 	import env from '../utils/env'
 	const electron = require('electron')
@@ -177,6 +204,8 @@
 				version: '',
 				updateService: '',
 				isMaximized: false,
+				aVersion: {},
+				about: false,
 			}
 		},
 		async created() {
@@ -194,11 +223,16 @@
 			}
 		},
 		methods: {
+			async myVersion() {
+				console.log(this.updateService)
+				this.aVersion = await this.updateService.vActual(this.v.current)
+				this.about = true
+			},
 			reloadPage() {
 				window.location.reload()
 			},
 			closeWindow() {
-				remote.getCurrentWindow().close()
+				electron.remote.getCurrentWindow().close()
 			},
 			quitApplication() {
 				const { app } = remote
@@ -323,8 +357,8 @@
 			},
 			cerrarVentana() {
 				// Cerrar la ventana en Electron
-				const { remote } = require('electron')
-				const ventanaActual = remote.getCurrentWindow()
+				//const { remote } = require('electron')
+				const ventanaActual = electron.remote.getCurrentWindow()
 				ventanaActual.close()
 			},
 			cerrarSesion() {
