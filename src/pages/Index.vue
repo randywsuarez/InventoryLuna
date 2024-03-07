@@ -52,17 +52,18 @@
 						</div>
 						<q-separator spaced inset />
 						<div class="row col-12" v-if="pid.PalletID">
-							<!-- <q-input
-								ref="OldPallet"
-								class="col-3"
+							<q-input
+								ref="Gruop"
+								class="col-2"
+								type="number"
 								standout="bg-teal text-white"
-								v-model="form.OldPallet"
-								label="Old Pallet"
-							/> -->
+								v-model="form.myGroup"
+								label="Gruop"
+							/>
 							<q-toggle ref="cases" class="col-2" size="xl" v-model="cases" :val="true" label="Case" />
 							<q-input
 								ref="Product"
-								class="col-4"
+								class="col-3"
 								standout="bg-teal text-white"
 								v-model="form.Product"
 								label="SKU/UPC"
@@ -71,7 +72,7 @@
 							<q-input
 								ref="Serial"
 								v-if="!cases"
-								class="col-4"
+								class="col-3"
 								standout="bg-teal text-white"
 								v-model="form.Serial"
 								label="Serial"
@@ -83,12 +84,11 @@
 							<q-input
 								ref="Qty"
 								v-if="cases"
-								class="col-4"
+								class="col-3"
 								type="number"
 								standout="bg-teal text-white"
 								v-model="form.Qty"
 								label="QTY"
-								@blur="addItems"
 								@keydown.enter="addItems"
 								@keydown.tab="addItems"
 								:disable="!form.Product"
@@ -249,7 +249,7 @@
 				columns: [
 					{ name: 'Serial', label: 'Serial', field: 'Serial', sortable: true },
 					{ name: 'Product', label: 'Product', field: 'Product', sortable: true },
-					//{ name: 'OldPallet', label: 'Old Pallet', field: 'OldPallet', sortable: true },
+					{ name: 'Group', label: 'Group', field: 'myGroup', sortable: true },
 					{ name: 'Qty', label: 'Qty', field: 'Qty', sortable: true },
 					{
 						name: 'Case',
@@ -368,7 +368,8 @@
 			},
 			async addItems() {
 				this.tableLoading = true
-				if (this.palletData.some((v) => v.Serial == this.form.Serial)) {
+				if (this.cases) this.form.Serial = ''
+				if (this.palletData.some((v) => v.Serial == this.form.Serial) && !this.cases) {
 					this.$q.notify({
 						type: 'negative',
 						message: `This serial: ${this.form.Serial} already exists.`,
@@ -387,14 +388,12 @@
 				this.form['InventoryID'] = 'NEWID()'
 				this.form['LastScan'] = 'GETDATE()'
 				this.form['Operator'] = 'test'
+				this.form['Cases'] = this.cases ? 1 : 0
 				this.form['PalletID'] = this.pid.PalletID
 				await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
 					.insert('LN_Inventory')
 					.fields(this.form)
 					.execute()
-				this.form = {
-					Qty: 1,
-				}
 				this.palletData = await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
 					.select('*')
 					.from('LN_Inventory')
@@ -403,6 +402,7 @@
 				this.tableLoading = false
 				this.form = {
 					Qty: 1,
+					myGroup: this.form.myGroup ? this.form.myGroup : '',
 				}
 				this.$q.notify({
 					type: 'positive',
@@ -591,6 +591,7 @@ GROUP BY
 				}
 			},
 			async report(id, name) {
+				let tbGroups = []
 				let tb = {
 					style: 'tableExample',
 					table: {
@@ -616,7 +617,47 @@ GROUP BY
 				for (let info of units) {
 					tb.table.body.push([info.Product, info.Serial, info.Type, info.Qty])
 				}
-				//console.log(JSON.stringify(tb))
+				let groups = new Set(units.map((obj) => obj.myGroup))
+				groups = [...groups]
+				console.log(groups)
+				for (let group of groups) {
+					let spInf = []
+					let mg = ''
+					if (group) {
+						let myinf = units.filter((v) => v.myGroup == group)
+						for (let info of myinf) {
+							spInf.push([info.Product, info.Serial, info.Type, info.myGroup, info.Qty])
+							mg = info.myGroup
+						}
+						tbGroups.push(
+							{
+								text: `${name}-${mg}`,
+								fontSize: 36,
+								style: 'header',
+							},
+							{
+								style: 'tableExample',
+								table: {
+									headerRows: 1,
+									widths: ['*', '*', '*', '*', '*'],
+									body: [
+										[
+											{ text: 'SKU/UPC', style: 'tableHeader' },
+											{ text: 'SERIAL', style: 'tableHeader' },
+											{ text: 'Type', style: 'tableHeader' },
+											{ text: 'Group', style: 'tableHeader' },
+											{ text: 'QTY', style: 'tableHeader' },
+										],
+										...spInf,
+									],
+								},
+								layout: 'lightHorizontalLines',
+							},
+							{ text: '', pageBreak: 'before' }
+						)
+					}
+				}
+				console.log(JSON.stringify(tbGroups))
 				var dd = {
 					pageSize: 'letter',
 					content: [
@@ -638,8 +679,10 @@ GROUP BY
 						// Contenido de la segunda página (puedes agregar más elementos según sea necesario)
 
 						// Tercera página con la tabla
+						...tbGroups,
 						{
 							text: `${name}`,
+							fontSize: 36,
 							style: 'header',
 						},
 						tb,
@@ -668,6 +711,8 @@ GROUP BY
 						fontSize: 12,
 					},
 				}
+
+				console.log(JSON.stringify(dd))
 				pdfMake.vfs = pdfFonts.pdfMake.vfs
 				pdfMake.createPdf(dd).download(`${name}.pdf`)
 				this.dd = dd
