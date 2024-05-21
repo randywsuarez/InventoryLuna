@@ -1,8 +1,8 @@
 export default {
 	DB_ISPT: {
 		server: 'sqlprodisp.database.windows.net',
-		user: 'sfis_test',
-		password: 'Sf1s@R3ad_1st#2023prod',
+		user: 'sfis',
+		password: 'Sf1s@R3ad_1sp#2023prod',
 	},
 	DB_INVENTORY: {
 		server: 'sqlprodisp.database.windows.net',

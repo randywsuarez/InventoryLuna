@@ -223,7 +223,6 @@
 	import pdfMake from 'pdfmake'
 	import pdfFonts from 'pdfmake/build/vfs_fonts'
 	import JsBarcode from 'jsbarcode'
-	import net from 'net'
 	export default {
 		data(r) {
 			return {
@@ -290,134 +289,6 @@
 			},
 		},
 		methods: {
-			async etiquetas() {
-				let Labels = []
-				let Units = await this.$rsDB('SFisDB', env.DB_ISPT)
-					.select('*')
-					.from('sfis_WorkTracking')
-					.where(
-						`SerialNumber in ('4CE211BQ5W', '8CC3102WYG', '8CC32213S3', '8CC3211R6R', '8CC3211R6T', '8CC3211R6V', '8CC3211R6S', '2MD1373G4P', '8CC2151ZTQ', '2MD24644KJ', '2MD2481TTN', '2MD24644JL', '2MD2512KRF', '2MD3023XZJ', '8CC1070VWZ', '8CC1500MR0', '8CC1500LSK', '8CC30326BM', '8CG2291D76', '8CC2340024', '8CC3030HPL', '8CC3013L0Y', '5CD3153Z9Z', '5CD2413Y9Z', '8CC1492NNC', '8CC1424VSN', '8CC114149N', '8CC14937ST', '8CC1493883', '8CC20912N8', '8CC20912T0', '8CC1431NNY', '8CC14937XS', '8CC1500LP4', '8CC1500N8Z', '8CC15016CB', '8CC15016JB', '8CC15016T8', '8CC15016ZZ', '8CC1501TW7', '8CC221204C', '8CC2321J9D', '8CC2350WBX', '8CC150136D', '8CC3010CF8', '8CC2270HHP', '8CC22901NR', '8CC22901TG', '8CC2291CNN', '8CC2291CY3', '8CC2291CYS', '8CC2291D6M', '8CC2291DFK', '8CC2291DHY', '8CC23400BP', '8CC23400D5', '8CC23400H7', '8CC239035J', '8CC1492QQ6', '8CC2352G24', '8CC2352G3N', '8CC1424VS1', '8CC1424VWZ', '8CC2210MCY', '8CC2210MDD', '8CC14249T3', '8CC1424B5D', '8CC1424BV0', '8CC1424BYD', '8CC1424C1Y', '8CC20216K2', '8CC20216N6', '8CC20216S5', '8CC2021702', '8CC202173J', '8CC1492NSR', '8CC1492P9Y', '8CC22516V7', '8CC22516Z4', '8CC2270HB3', '8CC20836XZ', '8CC22516ZT', '8CC2370JZ9', '8CC2370K1M', '8CC2370K6Q', '8CC2370K90')`
-					)
-					.execute()
-				let BOMH = await this.$rsDB('SFisDB', env.DB_ISPT).select('*').from('conf_BOMHeader').execute()
-				for (let unit of Units) {
-					let myBOMH = BOMH.find((v) => v.BOMHeaderID == unit.BOMHeaderID)
-					//console.log(unit.NewSKU, unit.SerialNumber, unit.BOMHeaderID)
-					let Label = `^XA
-	^MMT
-	^PW608
-	^LL0900
-	^LS0
-	^FO32,64
-	^FO55,80
-	^GFA,493,1476,12,:Z64:eJyllLFxwzAMReFzwSIFR8AoniJlZiHnyRLhCB4gvlOZKlapQiECEBQFJeQld3ZhvXs8EcCnJACA1wjtR6nhiSbDuz9TND52vaN9Sz/yeWeX+x7XnS/rwC+G574PxpP1k/GGQ+r6R2IYsc/RMHQZB6MfYiBuFIk+lGdhWX6TCwvZLgijMsmFPanP8idMn/cMlO+Fk1s5O2mXnwbuiCblxJVDEuZxUby0yzHgyot+Lf6ynJmzMB9MWSxPg/gop8n3h5kXcSnjCkc5NZe1qJym182jnBrfzx3lcpp8f+1IfO1oklPnoqheiqayqF47gq1o8cSFtCN5GmpHEXTzjdPWUYvBawy+dvQjBujG4GpR1NFrR79ioOVJva9FQ4tBI6nZP+8xELUYKmsMlUv2zC0GZh7r5Xq6AX7d3tsj9J83xvrpTz6+Mcn4aLxl6PpHPhw4+qCYsXDpezvuiA+jp64fx2B9NAxd343hG9pMevU=:30CE
-	^FT580,40^A0N,60,60^FH\^CI28^FD.^FS
-	^FT170,143^A0N,33,38^FH\^CI28^FD[MODEL]^FS^CI27
-	^FT170,183^A0N,33,38^FH\^CI28^FD[MODELDESC]^FS^CI27
-	^BY3,3,110^FT50,384^BCN,,N,N ^FD>:[SN]^FS
-	^FT65,436^A0N,29,28^FH\^FDSerial No.^FS
-	^FT223,440^A0N,42,38^FH\^FD[SN]^FS
-	^BY2,3,119^FT50,604^BCN,,N,N ^FD>:[NEWSKU]^FS
-	^FT65,651^A0N,29,28^FH\^FDProd No.^FS
-	^FT223,655^A0N,38,38^FH\\\^FD[NEWSKU]^FS
-	^BY3,2,123^FT65,820^BUN,,Y,N ^FD[UPC]^FS
-	^CI27
-	^FT374,587^BQN,2,2
-	^FT525,880^BQN,2,3 ^FH\^FDLA,https://shorturl.at/asxGJ^FS
-	^FT520,890^A0N,24,24^FH\^FDWarranty^FS
-	^PQ1,0,1,Y
-	^XZ`
-					/* let BOMH = await this.$rsDB('SFisDB', env.DB_ISPT)
-						.select('*')
-						.from('conf_BOMHeader')
-						.where(`BOMHeaderID='${unit.BOMHeaderID}'`)
-						.execute()
-					//BOMH = BOMH[0] */
-					Label = Label.replace(/\[UPC\]/g, myBOMH.UPC.length ? myBOMH.UPC : '00000000000')
-					//Label = Label.replace(/\[HD\]/g, myBOMH.StorageCapacity)
-					//Label = Label.replace(/\[RAM\]/g, myBOMH.RamCapacity)
-					//Label = Label.replace(/\[FAMILY\]/g, myBOMH.FamilyName)
-					Label = Label.replace(/\[NEWSKU\]/g, unit.NewSKU)
-					Label = Label.replace(/\[SN\]/g, unit.SerialNumber)
-					let model = myBOMH.ModelDescription.split('|')
-					Label = Label.replace(/\[MODEL\]/g, model[0])
-					if (model.length > 1) Label = Label.replace(/\[MODELDESC\]/g, model[1])
-					else Label.replace(/\[MODELDESC\]/g, ' ')
-					Labels.push(Label)
-				}
-				console.log(Labels.join('\n'))
-
-				// Dirección IP y puerto de la impresora
-				const printerHost = '47.190.184.6'
-				const printerPort = 9105
-
-				// Comandos ZPL que deseas imprimir
-				const zplData = '^XA^FO50,50^A0N,100,100^FDHello, World!^FS^XZ'
-
-				// Crear una conexión TCP con la impresora
-				const client = net.createConnection({ host: printerHost, port: printerPort }, () => {
-					console.log('Conexión establecida con la impresora.')
-
-					// Enviar comandos ZPL a la impresora
-					client.write(Labels.join('\n'))
-				})
-
-				// Manejar eventos de error y cierre de la conexión
-				client.on('error', (err) => {
-					console.error('Error de conexión:', err)
-				})
-
-				client.on('close', () => {
-					console.log('Conexión cerrada con la impresora.')
-				})
-			},
-			async etiquetasTwo() {
-				let Labels = []
-				let id = 25123409
-				for (let x = 1; x <= 47; x++) {
-					let Label = `^XA
-^MMT
-^PW600
-^LL300
-^LS0
-^FT50,290^BQN,2,5
-^FH\\^FDLA,{"id": "[shipment]", "operation": "fbm", "type":"inbound","source":"seller"}^FS
-^FT202,64^A0N,42,43^FH\\^CI28^FDVOLUME LABEL^FS^CI27
-^FT228,124^A0N,29,28^FH\\^CI28^FDSHIPMENT: [ID]^FS^CI27
-^FO228,159^GFA,477,672,32,:Z64:eJxt0r1uAjEMB3BHlshyvVs7HOUhuhiB4FV4hCCklqHq5cRr8CCMjm7gNYI6dL2RoSK1w6fUbpF+kv+ObTI8bxM0vTMh7WFRApVgMW286Xg6P5LhFBI3/Tp7X8K6ys4mMKmHQwjRgThb6Gv1Cj0ycnQEZDpv5AUf4ujFj//7p3qb3Y/Eo2UX/7jk3X396O8Xx90TT8RdyWPOztlXbZCWd48+9+oh3r3bkqUivopTwaPsfJQSTVyGkNpu60rxFSakmivIPjPJN9EdQvLiBRUL9Wf1eS9emRM4EGf4LlxNhfuS+jVd3bZ79aV66ejul3wMnRcfZ5eZFeNOvHQ8Obu5+1sZm3Rz/X+tHlh8KP45UB9uxO2ClzK/Gr3J+3OVumWgYpQ9ci/+os5Xn2Wv1DHm/VUVbgL34lZ8enZUZ0klsCdMLTu5L5QzmuLF00adCPAHTobXN/fiA3XjOz8l+AXWbQMb:8F8F
-^FT228,234^A0N,29,28^FH\\^CI28^FDID: 1735902700^FS^CI27
-^PQ1,0,1,Y
-^XZ`
-					Label = Label.replace(/\[ID\]/g, `${id}/${x}`)
-					Label = Label.replace(/\[shipment\]/g, `${id}/${x}`)
-					Labels.push(Label)
-				}
-				console.log(Labels.join('\n'))
-
-				// Dirección IP y puerto de la impresora
-				const printerHost = '47.190.184.6'
-				const printerPort = 9105
-
-				// Comandos ZPL que deseas imprimir
-				const zplData = '^XA^FO50,50^A0N,100,100^FDHello, World!^FS^XZ'
-
-				// Crear una conexión TCP con la impresora
-				const client = net.createConnection({ host: printerHost, port: printerPort }, () => {
-					console.log('Conexión establecida con la impresora.')
-
-					// Enviar comandos ZPL a la impresora
-					client.write(Labels.join('\n'))
-				})
-
-				// Manejar eventos de error y cierre de la conexión
-				client.on('error', (err) => {
-					console.error('Error de conexión:', err)
-				})
-
-				client.on('close', () => {
-					console.log('Conexión cerrada con la impresora.')
-				})
-			},
 			upperCase(info) {
 				this.form[info] = this.form[info].toUpperCase()
 			},
@@ -659,30 +530,30 @@
 				this.pallets = await this.$rsDB('LunaInventoryDB', env.DB_INVENTORY)
 					.myQuery(
 						`SELECT
-		LN_InternalPallet.PalletID,
-		LN_InternalPallet.Name,
-		LN_InternalPallet.Status,
-		LN_InternalPallet.Operator,
-		LN_InternalPallet.LastScan,
-		LN_InternalPallet.PalletTypesID,
-		LN_InternalPallet.ProductTypesID,
-		LN_InternalPallet.OtherProductsID,
-		COUNT(LN_Inventory.PalletID) AS Total
-	FROM
-		dbo.LN_InternalPallet
-		LEFT JOIN
-		dbo.LN_Inventory
-		ON
-			LN_InternalPallet.PalletID = LN_Inventory.PalletID
-	GROUP BY
-		LN_InternalPallet.PalletID,
-		LN_InternalPallet.Name,
-		LN_InternalPallet.Status,
-		LN_InternalPallet.Operator,
-		LN_InternalPallet.LastScan,
-		LN_InternalPallet.PalletTypesID,
-		LN_InternalPallet.ProductTypesID,
-		LN_InternalPallet.OtherProductsID`
+	LN_InternalPallet.PalletID,
+	LN_InternalPallet.Name,
+	LN_InternalPallet.Status,
+	LN_InternalPallet.Operator,
+	LN_InternalPallet.LastScan,
+	LN_InternalPallet.PalletTypesID,
+	LN_InternalPallet.ProductTypesID,
+	LN_InternalPallet.OtherProductsID,
+	COUNT(LN_Inventory.PalletID) AS Total
+FROM
+	dbo.LN_InternalPallet
+	LEFT JOIN
+	dbo.LN_Inventory
+	ON
+		LN_InternalPallet.PalletID = LN_Inventory.PalletID
+GROUP BY
+	LN_InternalPallet.PalletID,
+	LN_InternalPallet.Name,
+	LN_InternalPallet.Status,
+	LN_InternalPallet.Operator,
+	LN_InternalPallet.LastScan,
+	LN_InternalPallet.PalletTypesID,
+	LN_InternalPallet.ProductTypesID,
+	LN_InternalPallet.OtherProductsID`
 					)
 					.execute()
 			},
@@ -834,9 +705,9 @@
 					content: [
 						// Texto
 						/* { image: this.titleImg, width: 200, height: 50, alignment: 'center' },
-							// Código de barras
-							{ image: this.barImg, width: 200, height: 50, alignment: 'center' },
-							{ text: '', pageBreak: 'before' }, */
+						// Código de barras
+						{ image: this.barImg, width: 200, height: 50, alignment: 'center' },
+						{ text: '', pageBreak: 'before' }, */
 
 						// Segunda página con orientación vertical
 						// Contenido de la segunda página (puedes agregar más elementos según sea necesario)
@@ -895,7 +766,6 @@
 			await this.rsLoad()
 
 			this.$q.loading.hide()
-			//await this.etiquetasTwo()
 		},
 	}
 </script>
